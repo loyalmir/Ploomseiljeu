@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0E1525" />
+<title>Ploom 세일즈 보고</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --ink:#0E1525; --ink-2:#141D30; --surface:#1A2438; --surface-2:#222E47;
+    --line:#2C3A57; --line-soft:#243150;
+    --txt:#F2F5FA; --txt-dim:#8B97AD; --txt-faint:#5E6B83;
+    --blue:#4A8CFF; --blue-deep:#2E63D6;
+    --coral:#FF6B5C; --green:#38D39F; --amber:#FFC24B;
+    --kakao:#FEE500; --kakao-ink:#1A1A1A;
+    --r:14px; --r-sm:10px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{font-family:'Pretendard',-apple-system,system-ui,sans-serif; background:var(--ink); color:var(--txt); font-size:16px; line-height:1.5; padding-bottom:84px; min-height:100vh; -webkit-font-smoothing:antialiased;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  header{position:sticky; top:0; z-index:30; background:linear-gradient(180deg, rgba(14,21,37,.98), rgba(14,21,37,.86)); backdrop-filter:blur(8px); border-bottom:1px solid var(--line-soft); padding:14px 18px 12px;}
+  .brand{display:flex; align-items:center; gap:9px;}
+  .brand .dot{width:9px; height:9px; border-radius:50%; background:var(--coral); box-shadow:0 0 0 4px rgba(255,107,92,.18);}
+  .brand h1{font-size:17px; font-weight:800; margin:0; letter-spacing:-.3px;}
+  .sync{font-family:'JetBrains Mono',monospace; font-size:10px; padding:2px 7px; border-radius:20px; border:1px solid var(--line); color:var(--txt-dim); margin-left:auto;}
+
+  .filters{padding:12px 14px 4px;}
+  .filter-row{display:flex; gap:7px; overflow-x:auto; padding-bottom:8px; scrollbar-width:none;}
+  .filter-row::-webkit-scrollbar{display:none;}
+  .filter-row .lbl{font-size:11px; color:var(--txt-faint); font-weight:700; align-self:center; flex-shrink:0; width:30px;}
+  .chip{flex-shrink:0; padding:7px 13px; border-radius:20px; font-size:13px; font-weight:700; background:var(--surface); border:1px solid var(--line); color:var(--txt-dim); cursor:pointer; transition:.12s; white-space:nowrap;}
+  .chip.on{background:var(--blue); border-color:var(--blue); color:#fff;}
+  .chip.date.on{background:var(--coral); border-color:var(--coral);}
+  .date-wrap{display:flex; align-items:center; gap:8px;}
+  .date-wrap #dateChips{flex:1; min-width:0; padding-bottom:8px;}
+  .past-btn{flex-shrink:0; padding:7px 12px; border-radius:20px; font-size:12px; font-weight:700; background:var(--surface); border:1px solid var(--line); color:var(--txt-dim); cursor:pointer; white-space:nowrap;}
+  .past-btn.on{background:var(--coral); border-color:var(--coral); color:#fff;}
+  .past-btn.hidden{display:none;}
+
+  main{padding:8px 14px 20px; max-width:560px; margin:0 auto;}
+
+  .daygroup-title{font-size:12px; color:var(--txt-faint); font-weight:700; margin:18px 4px 8px; letter-spacing:.4px;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 14px 13px; margin-bottom:10px; cursor:pointer; transition:.12s; position:relative; overflow:hidden;}
+  .card:active{transform:scale(.99);}
+  .card .stripe{position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--blue);}
+  .card-top{display:flex; align-items:baseline; gap:8px; margin-bottom:5px;}
+  .card .round{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--txt-faint); font-weight:700;}
+  .card .name{font-size:16px; font-weight:800; letter-spacing:-.3px;}
+  .card .meta{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:3px;}
+  .tag{font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--surface-2); color:var(--txt-dim);}
+  .tag.type{background:rgba(74,140,255,.14); color:var(--blue);}
+  .tag.brand{background:rgba(255,255,255,.06); color:var(--txt);}
+  .tag.code{background:rgba(255,107,92,.14); color:var(--coral); font-family:'JetBrains Mono',monospace;}
+  .card .addr{font-size:12.5px; color:var(--txt-dim); margin-top:8px; display:flex; align-items:center; gap:5px;}
+  .card .addr a{color:var(--blue); text-decoration:none; font-weight:700; margin-left:auto; flex-shrink:0;}
+
+  .empty{text-align:center; padding:50px 20px; color:var(--txt-faint);}
+  .empty b{display:block; color:var(--txt-dim); font-size:15px; margin-bottom:6px;}
+  .empty button{margin-top:14px;}
+
+  button{font-family:inherit;}
+  .btn{border:none; border-radius:var(--r-sm); padding:13px 16px; font-size:15px; font-weight:800; cursor:pointer; transition:.12s; display:inline-flex; align-items:center; justify-content:center; gap:7px;}
+  .btn-primary{background:var(--blue); color:#fff;} .btn-primary:active{background:var(--blue-deep);}
+  .btn-kakao{background:var(--kakao); color:var(--kakao-ink);}
+  .btn-ghost{background:var(--surface-2); color:var(--txt); border:1px solid var(--line);}
+  .btn-block{width:100%;}
+
+  nav{position:fixed; bottom:0; left:0; right:0; z-index:40; background:var(--ink-2); border-top:1px solid var(--line-soft); display:flex; padding:8px 0 calc(8px + env(safe-area-inset-bottom));}
+  nav button{flex:1; background:none; border:none; color:var(--txt-faint); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px 0; font-size:11px; font-weight:700;}
+  nav button.on{color:var(--blue);}
+  nav button svg{width:22px; height:22px;}
+
+  .sheet-bg{position:fixed; inset:0; background:rgba(5,9,18,.6); z-index:50; opacity:0; pointer-events:none; transition:.2s;}
+  .sheet-bg.open{opacity:1; pointer-events:auto;}
+  .sheet{position:fixed; left:0; right:0; bottom:0; z-index:51; max-height:95vh; background:var(--ink-2); border-radius:20px 20px 0 0; border-top:1px solid var(--line); transform:translateY(100%); transition:transform .26s cubic-bezier(.3,.9,.3,1); display:flex; flex-direction:column; overflow:hidden;}
+  .sheet.open{transform:translateY(0);}
+  .sheet-handle{width:38px; height:4px; background:var(--line); border-radius:4px; margin:9px auto 4px;}
+  .sheet-head{padding:6px 18px 12px; border-bottom:1px solid var(--line-soft);}
+  .sheet-head .st{font-size:18px; font-weight:800;}
+  .sheet-head .mt{font-size:12.5px; color:var(--txt-dim); margin-top:3px;}
+  .sheet-head .mt .code{font-family:'JetBrains Mono',monospace; color:var(--coral); margin-left:6px;}
+  .sheet-body{overflow-y:auto; padding:14px 18px 22px; -webkit-overflow-scrolling:touch;}
+
+  .type-row{display:flex; gap:6px; overflow-x:auto; padding-bottom:10px; margin-bottom:6px; scrollbar-width:none;}
+  .type-row::-webkit-scrollbar{display:none;}
+  .type-chip{flex-shrink:0; padding:8px 13px; border-radius:9px; font-size:13px; font-weight:800; background:var(--surface); border:1px solid var(--line); color:var(--txt-dim); cursor:pointer; transition:.12s; white-space:nowrap;}
+  .type-chip .n{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--txt-faint); margin-right:5px;}
+  .type-chip.on{background:rgba(74,140,255,.14); border-color:var(--blue); color:var(--blue);}
+  .type-chip.on .n{color:var(--blue);}
+
+  .field{margin-bottom:15px;}
+  .field > label{display:block; font-size:12px; font-weight:700; color:var(--txt-dim); margin-bottom:8px; letter-spacing:.3px;}
+  .field > label .o{color:var(--txt-faint); font-weight:500;}
+  textarea, input[type=text]{width:100%; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-sm); color:var(--txt); font-family:inherit; font-size:15px; padding:12px 13px; resize:vertical;}
+  textarea:focus, input:focus{outline:none; border-color:var(--blue);}
+  textarea{min-height:64px; line-height:1.55;}
+  input.mono{font-family:'JetBrains Mono',monospace;}
+
+  .opts{display:flex; gap:7px; flex-wrap:wrap;}
+  .opt{padding:9px 14px; border-radius:9px; font-size:13.5px; font-weight:700; cursor:pointer; background:var(--surface); border:1px solid var(--line); color:var(--txt-dim); transition:.1s;}
+  .opt.on{background:rgba(74,140,255,.16); border-color:var(--blue); color:var(--blue);}
+  .opt.on.no{background:rgba(255,107,92,.16); border-color:var(--coral); color:var(--coral);}
+  .opt.on.yes{background:rgba(56,211,159,.16); border-color:var(--green); color:var(--green);}
+
+  .seg{display:flex; background:var(--surface); border-radius:var(--r-sm); padding:4px; gap:4px; margin-bottom:15px;}
+  .seg button{flex:1; padding:10px; border:none; background:none; color:var(--txt-dim); font-weight:800; font-size:14px; border-radius:7px; cursor:pointer; transition:.12s;}
+  .seg button.on{background:var(--blue); color:#fff;}
+
+  .qty-head{display:flex; gap:6px; font-size:11px; font-weight:700; color:var(--txt-faint); margin-bottom:6px; padding:0 2px;}
+  .qty-head .n{flex:1;} .qty-head .c{width:64px; flex-shrink:0; text-align:center;}
+  .qty-row{display:flex; gap:6px; align-items:center; margin-bottom:7px;}
+  .qty-row .nm{flex:1; font-size:14px; font-weight:700; color:var(--txt); padding-left:2px;}
+  .qty-row input{width:64px; flex-shrink:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; color:var(--txt); font-family:'JetBrains Mono',monospace; font-size:15px; padding:9px 6px; text-align:center;}
+  .qty-row input:focus{outline:none; border-color:var(--blue);}
+  .qty-row .slash{color:var(--txt-faint); font-weight:800; padding:0 2px;}
+
+  .grp{border-top:1px solid var(--line-soft); margin:4px 0 15px; padding-top:14px;}
+  .grp:first-child{border-top:none; padding-top:0;}
+  .grp-t{font-size:12px; font-weight:800; color:var(--txt-faint); letter-spacing:.4px; margin-bottom:11px;}
+
+  .preview-label{font-size:12px; font-weight:700; color:var(--txt-dim); margin:8px 0 9px; display:flex; align-items:center; gap:7px;}
+  .preview-label .live{width:7px; height:7px; border-radius:50%; background:var(--green); animation:blink 1.6s infinite;}
+  @keyframes blink{50%{opacity:.3;}}
+  .kakao-stage{display:flex; justify-content:flex-end; padding:4px 0 2px;}
+  .bubble{background:var(--kakao); color:var(--kakao-ink); border-radius:16px 4px 16px 16px; padding:13px 15px; max-width:88%; font-size:14.5px; line-height:1.62; font-weight:500; white-space:pre-wrap; word-break:break-word; box-shadow:0 4px 16px rgba(0,0,0,.25);}
+  .sheet-foot{padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--line-soft); display:flex; gap:9px; background:var(--ink-2);}
+  .sheet-foot .btn{flex:1;} .sheet-foot .btn.share{flex:1.6;}
+
+  .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; margin-bottom:13px;}
+  .panel h3{margin:0 0 4px; font-size:15px; font-weight:800;}
+  .panel p{margin:0 0 12px; font-size:12.5px; color:var(--txt-dim); line-height:1.55;}
+  .hint{font-size:11.5px; color:var(--txt-faint); margin-top:8px; line-height:1.5;}
+  .hint .ok{color:var(--green);} .hint .warn{color:var(--amber);}
+  .row{display:flex; gap:9px; align-items:center;}
+
+  .toast{position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--txt); color:var(--ink); padding:11px 20px; border-radius:24px; font-weight:800; font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:99; box-shadow:0 8px 30px rgba(0,0,0,.4);}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .view{display:none;} .view.on{display:block;}
+  .none{display:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="dot"></span><h1>Ploom 세일즈 보고</h1><span class="sync">로컬 저장</span></div>
+</header>
+
+<!-- ════ 보고 (날짜·팀 필터 + 카드) ════ -->
+<section class="view on" id="view-today">
+  <div class="filters">
+    <div class="filter-row" id="groupChips" style="display:none;"><span class="lbl">조</span></div>
+    <div class="date-wrap">
+      <div class="filter-row" id="dateChips"><span class="lbl">날짜</span></div>
+      <button class="past-btn hidden" id="pastBtn" onclick="togglePast()">지난날</button>
+    </div>
+    <div class="filter-row" id="teamChips"><span class="lbl">팀</span></div>
+  </div>
+  <main id="storeList"></main>
+</section>
+
+<!-- ════ 일정 (엑셀) ════ -->
+<section class="view" id="view-schedule">
+  <main>
+    <div class="panel">
+      <h3>월간 일정 — 엑셀 가져오기</h3>
+      <p>매달 받는 엑셀(.xlsx)을 그대로 선택하세요. 팀·날짜·점포·주소·점포코드를 알아서 읽어 날짜별로 채웁니다.</p>
+      <div class="seg" style="margin-bottom:12px;">
+        <button id="impNew" class="on" onclick="setImportMode('replace')">새로 시작</button>
+        <button id="impAdd" onclick="setImportMode('merge')">기존에 더하기</button>
+      </div>
+      <input type="text" id="impGroup" placeholder="조 이름 (선택 · 예: A조)" style="margin-bottom:14px;">
+      <label class="btn btn-primary btn-block" style="cursor:pointer;">엑셀 파일 선택
+        <input type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,*/*" hidden onchange="importExcel(event)">
+      </label>
+      <div class="hint" id="importMsg"></div>
+      <div class="hint">헤더는 <b>팀 / 세일즈 진행 일차 / 날짜 / 요일 / 점포/흡연구역 / 점포 타입 / 점포명 / 주소 / 점포코드</b> 를 인식합니다. (현장보고 앱과 같은 엑셀)</div>
+    </div>
+    <div class="panel">
+      <h3>또는 CSV 붙여넣기</h3>
+      <p>노션 체크리스트를 복사해 붙여 넣어도 됩니다.</p>
+      <textarea id="csvInput" placeholder="여기에 CSV 붙여넣기…" style="min-height:80px; font-size:13px;" class="mono"></textarea>
+      <div class="row" style="margin-top:11px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="importCSV()">CSV 채우기</button>
+        <button class="btn btn-ghost" onclick="loadSample()">예시 넣기</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>전체 일정 <span class="mono" id="schedCount" style="color:var(--txt-faint); font-size:13px;"></span></h3>
+      <p>탭하면 보고 화면이 열립니다. 길게 눌러 삭제.</p>
+      <button class="btn btn-ghost btn-block" onclick="wipeData()">전체 일정 삭제</button>
+    </div>
+    <div id="schedList"></div>
+  </main>
+</section>
+
+<!-- ════ 편집 시트 ════ -->
+<div class="sheet-bg" id="sheetBg" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div class="st" id="edStore">—</div>
+    <div class="mt" id="edMeta">—</div>
+  </div>
+  <div class="sheet-body">
+    <div class="type-row" id="typeRow">
+      <span class="type-chip" data-type="am"       onclick="setType('am')"><span class="n">01</span>오전</span>
+      <span class="type-chip" data-type="pm"       onclick="setType('pm')"><span class="n">02</span>오후</span>
+      <span class="type-chip" data-type="live"     onclick="setType('live')"><span class="n">03</span>실시간</span>
+      <span class="type-chip" data-type="material" onclick="setType('material')"><span class="n">04</span>물자</span>
+      <span class="type-chip" data-type="move"     onclick="setType('move')"><span class="n">05</span>이동</span>
+      <span class="type-chip" data-type="close"    onclick="setType('close')"><span class="n">06</span>마감</span>
+    </div>
+
+    <!-- 01·02 오전/오후 -->
+    <div class="form none" id="f-sales">
+      <div class="field"><label>대상 점포</label><input type="text" id="s_store" placeholder="점포명" oninput="render()"></div>
+      <div class="field">
+        <label>진행 안내</label>
+        <div class="opts" data-group="s_guide">
+          <span class="opt" onclick="pick('s_guide','안내 완료 및 진행 동의',this)">완료·진행 동의</span>
+          <span class="opt" onclick="pick('s_guide','안내 완료',this)">안내만 완료</span>
+          <span class="opt" onclick="pick('s_guide','진행 거절',this,'no')">진행 거절</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>안내 대상</label>
+        <div class="opts" data-group="s_target">
+          <span class="opt" onclick="pick('s_target','점주',this)">점주</span>
+          <span class="opt" onclick="pick('s_target','직원',this)">직원</span>
+        </div>
+      </div>
+      <div class="field"><label>점포 재고</label><input type="text" id="s_stock" placeholder="예) 블랙 1대" oninput="render()"></div>
+      <div class="field">
+        <label>스틱 발주여부</label>
+        <div class="opts" data-group="s_stick">
+          <span class="opt" onclick="pick('s_stick','O',this,'yes')">O</span>
+          <span class="opt" onclick="pick('s_stick','X',this,'no')">X</span>
+        </div>
+      </div>
+      <div class="field"><label>부스 위치</label><input type="text" id="s_booth" placeholder="예) 근처 흡연구역" oninput="render()"></div>
+      <div class="field"><label>점포 피드백</label><input type="text" id="s_feedback" placeholder="예) 호의적이십니다" oninput="render()"></div>
+      <div class="field"><label>인근 점포</label><textarea id="s_nearby" placeholder="예) 세븐일레븐 인덕원ak밸리점 안내완료" oninput="render()"></textarea></div>
+      <div class="field">
+        <label>활동 동의서</label>
+        <div class="row" style="gap:8px; margin-bottom:8px;"><input type="text" id="s_brand" placeholder="브랜드 (예: GS25)" oninput="render()"></div>
+        <div class="opts" data-group="s_consent">
+          <span class="opt" onclick="pick('s_consent','서명완료',this,'yes')">서명완료</span>
+          <span class="opt" onclick="pick('s_consent','작성 예정',this)">작성 예정</span>
+          <span class="opt" onclick="pick('s_consent','해당없음',this,'no')">해당없음</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 실시간 -->
+    <div class="form none" id="f-live">
+      <div class="field">
+        <label>판매 디바이스 색상</label>
+        <div class="opts" data-group="l_color">
+          <span class="opt" onclick="pick('l_color','블랙',this)">블랙</span>
+          <span class="opt" onclick="pick('l_color','실버',this)">실버</span>
+          <span class="opt" onclick="pick('l_color','로즈골드',this)">로즈골드</span>
+          <span class="opt" onclick="pick('l_color','블루',this)">블루</span>
+          <span class="opt" onclick="pick('l_color','네이비',this)">네이비</span>
+        </div>
+      </div>
+      <div class="qty-row" style="margin-bottom:15px;"><span class="nm">판매수량</span><input type="text" inputmode="numeric" id="l_qty" placeholder="1" oninput="render()"></div>
+      <div class="field">
+        <label>판매경로</label>
+        <div class="opts" data-group="l_route">
+          <span class="opt" onclick="pick('l_route','엠포스(단말기)',this)">엠포스(단말기)</span>
+          <span class="opt" onclick="pick('l_route','직접판매',this)">직접판매</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>회원가입 여부</label>
+        <div class="opts" data-group="l_join">
+          <span class="opt" onclick="pick('l_join','O',this,'yes')">O</span>
+          <span class="opt" onclick="pick('l_join','X',this,'no')">X</span>
+        </div>
+      </div>
+      <div class="field">
+        <label>카톡 친추 여부</label>
+        <div class="opts" data-group="l_kakao">
+          <span class="opt" onclick="pick('l_kakao','O',this,'yes')">O</span>
+          <span class="opt" onclick="pick('l_kakao','X',this,'no')">X</span>
+        </div>
+      </div>
+      <div class="qty-row"><span class="nm">구매혜택(스타벅스)</span><input type="text" inputmode="numeric" id="l_sbux" placeholder="0" oninput="render()"></div>
+    </div>
+
+    <!-- 04 물자 -->
+    <div class="form none" id="f-material">
+      <div class="grp"><div class="grp-t">단말기</div>
+        <div class="field"><label>단말기 박스 일련번호</label><input type="text" class="mono" id="m_box" placeholder="예) ZC26030031" oninput="render()"></div>
+        <div class="field"><label>단말기 일련번호</label><input type="text" class="mono" id="m_serial" placeholder="예) 101209" oninput="render()"></div>
+      </div>
+      <div class="grp"><div class="grp-t">스타벅스 카드</div>
+        <div class="qty-row"><span class="nm">카드 수량</span><input type="text" inputmode="numeric" id="m_sbux" placeholder="0" oninput="render()"></div>
+      </div>
+      <div class="grp"><div class="grp-t">판매용 디스플레이</div>
+        <div class="qty-row"><span class="nm">블랙</span><input type="text" inputmode="numeric" id="m_black" placeholder="0" oninput="render()"></div>
+        <div class="qty-row"><span class="nm">실버</span><input type="text" inputmode="numeric" id="m_silver" placeholder="0" oninput="render()"></div>
+        <div class="qty-row"><span class="nm">로즈골드</span><input type="text" inputmode="numeric" id="m_rose" placeholder="0" oninput="render()"></div>
+        <div class="qty-row"><span class="nm">네이비</span><input type="text" inputmode="numeric" id="m_navy" placeholder="0" oninput="render()"></div>
+      </div>
+    </div>
+
+    <!-- 05 이동 -->
+    <div class="form none" id="f-move">
+      <div class="seg">
+        <button id="mvConfirm" class="on" onclick="setMove('confirm')">컨펌 요청</button>
+        <button id="mvDone" onclick="setMove('done')">완료 보고</button>
+      </div>
+      <div id="mv-confirm">
+        <div class="field"><label>원점포</label><input type="text" id="mc_from" placeholder="예) cu 인천간석역점" oninput="render()"></div>
+        <div class="field"><label>이동점포</label><input type="text" id="mc_to" placeholder="예) cu 주안대로점" oninput="render()"></div>
+        <div class="field"><label>사유</label><textarea id="mc_reason" placeholder="예) 유동인구 겹침으로 인해 요청드립니다." oninput="render()"></textarea></div>
+        <div class="field"><label>추가 문구 <span class="o">(선택 · 예: 점포 인사완료)</span></label><textarea id="mc_extra" placeholder="없으면 비워두세요." oninput="render()"></textarea></div>
+      </div>
+      <div id="mv-done" class="none">
+        <div class="field"><label>이동 점포</label><input type="text" id="md_store" placeholder="예) gs25 강서안강점" oninput="render()"></div>
+        <div class="field">
+          <label>안내 대상</label>
+          <div class="opts" data-group="md_target">
+            <span class="opt" onclick="pick('md_target','점주',this)">점주</span>
+            <span class="opt" onclick="pick('md_target','직원',this)">직원</span>
+          </div>
+        </div>
+        <div class="field"><label>점포 재고</label><input type="text" id="md_stock" placeholder="예) 실버1/블랙1" oninput="render()"></div>
+        <div class="field"><label>인근 점포</label><input type="text" id="md_nearby" placeholder="예) cu 마곡더랜드" oninput="render()"></div>
+        <div class="field"><label>진행 동의</label><div class="opts"><span class="opt" id="md_agree" onclick="toggleFlag('md_agree')">안내 및 진행 동의 완료</span></div></div>
+        <div class="field"><label>점포 피드백</label><input type="text" id="md_feedback" placeholder="예) 호의적이십니다!" oninput="render()"></div>
+        <div class="field"><label>활동 동의서</label><div class="opts"><span class="opt" id="md_consent" onclick="toggleFlag('md_consent')">작성 완료</span></div></div>
+        <div class="field"><label>태그·추가 문구 <span class="o">(선택 · 예: @경택 팀장님)</span></label><textarea id="md_extra" placeholder="없으면 비워두세요." oninput="render()"></textarea></div>
+      </div>
+    </div>
+
+    <!-- 06 마감 -->
+    <div class="form none" id="f-close">
+      <div class="field"><label>마감 날짜 <span class="o">(일정 날짜 자동 · 수정 가능)</span></label><input type="text" class="mono" id="c_date" placeholder="예) 7/6" oninput="render()"></div>
+      <div class="grp"><div class="grp-t">판매 / 잔여 수량</div>
+        <div class="qty-head"><span class="n"></span><span class="c">판매</span><span class="c">잔여</span></div>
+        <div class="qty-row"><span class="nm">블랙</span><input type="text" inputmode="numeric" id="c_black_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_black_r" placeholder="0" oninput="render()"></div>
+        <div class="qty-row"><span class="nm">실버</span><input type="text" inputmode="numeric" id="c_silver_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_silver_r" placeholder="0" oninput="render()"></div>
+        <div class="qty-row"><span class="nm">로즈</span><input type="text" inputmode="numeric" id="c_rose_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_rose_r" placeholder="0" oninput="render()"></div>
+        <div class="qty-row"><span class="nm">블루</span><input type="text" inputmode="numeric" id="c_blue_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_blue_r" placeholder="0" oninput="render()"></div>
+      </div>
+      <div class="grp"><div class="grp-t">스타벅스 카드</div>
+        <div class="qty-head"><span class="n"></span><span class="c">소진</span><span class="c">잔여</span></div>
+        <div class="qty-row"><span class="nm">카드</span><input type="text" inputmode="numeric" id="c_sbux_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_sbux_r" placeholder="0" oninput="render()"></div>
+      </div>
+    </div>
+
+    <div class="preview-label"><span class="live"></span>카톡에 붙일 내용</div>
+    <div class="kakao-stage"><div class="bubble" id="preview">—</div></div>
+  </div>
+  <div class="sheet-foot">
+    <button class="btn btn-ghost" onclick="copyOut()">복사</button>
+    <button class="btn btn-kakao share" onclick="shareOut()">공유</button>
+  </div>
+</div>
+
+<nav>
+  <button class="on" data-view="today" onclick="switchView('today')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>보고</button>
+  <button data-view="schedule" onclick="switchView('schedule')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>일정</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+/* ═══════════ 상태 ═══════════ */
+let DATA = {};
+let curId = null;
+let filterDate='오늘', filterTeam='전체', filterGroup='전체';
+let showPast=false, importMode='replace';
+let type='am', moveMode='confirm';
+const V={}, FLAG={};
+
+/* ═══════════ 날짜 헬퍼 ═══════════ */
+function todayKey(){ const d=new Date(); return (d.getMonth()+1)+'.'+d.getDate(); }
+function dateVal(k){ const p=(k||'').split('.').map(Number); return (p[0]||0)*100+(p[1]||0); }
+function isPast(k){ return dateVal(k) < dateVal(todayKey()); }
+function uniq(arr){ return [...new Set(arr)]; }
+function visits(){ return Object.values(DATA); }
+function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function teamSort(a,b){ const rank=t=>/^[A-Za-z]/.test(t)?0:1; const ra=rank(a),rb=rank(b); return ra!==rb?ra-rb:a.localeCompare(b,'ko',{numeric:true}); }
+
+/* ═══════════ 저장 ═══════════ */
+function save(){ localStorage.setItem('ploomSalesVisits', JSON.stringify(DATA)); renderAll(); }
+function load(){ try{ DATA=JSON.parse(localStorage.getItem('ploomSalesVisits')||'{}'); }catch(e){ DATA={}; } }
+
+/* ═══════════ 엑셀 / CSV import ═══════════ */
+const BRANDS=['GS 25','GS25','CU','세븐일레븐','이마트24','이마트 24','미니스톱','씨유'];
+function normBrand(b){ return (b||'').replace(/\s+/g,''); }
+function serialToDate(serial){ return new Date(Math.round((serial-25569)*86400000)); }
+function normDate(raw){ if(!raw) return ''; const m=raw.match(/(\d{1,2})\D+(\d{1,2})/); return m?m[1]+'.'+m[2]:raw; }
+function setImportMode(m){ importMode=m; document.getElementById('impNew').classList.toggle('on',m==='replace'); document.getElementById('impAdd').classList.toggle('on',m==='merge'); }
+
+function parseCSV(text){
+  const rows=[]; const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim()!=='');
+  for(const line of lines){ const cells=[]; let cur='',q=false;
+    for(let i=0;i<line.length;i++){ const c=line[i];
+      if(c==='"'){ q=!q; } else if(c===','&&!q){ cells.push(cur); cur=''; } else cur+=c; }
+    cells.push(cur); rows.push(cells.map(s=>s.trim())); }
+  return rows;
+}
+function col(header, names){ for(const n of names){ const i=header.indexOf(n); if(i>=0) return i; } return -1; }
+
+const DEMO=`차수,구분,날짜,매장명,상태,신규/기존,요일,재고,점주,주소,지역,코드,팀,편의점
+6,점포,7월 13,노량메가점,,,월요일,,No,서울 동작구 노량진로 140 1층,,,3팀,GS25
+6,점포,7월 13,구로대륭점,,,월요일,,No,서울 구로구 디지털로34길 27,,,14팀,세븐일레븐
+6,흡연구역,7월 13,금천하이시티점,,,월요일,,No,서울 금천구 가산디지털1로 131,,,15팀,CU`;
+
+function importCSVText(text, silent){
+  const rows=parseCSV(text);
+  if(rows.length<2){ if(!silent) msg('<span class="warn">읽을 데이터가 없어요.</span>'); return; }
+  const h=rows[0];
+  const ci={ round:col(h,['차수','세일즈 진행 일차']), type:col(h,['구분','점포/흡연구역']), date:col(h,['날짜']),
+    store:col(h,['매장명','점포명']), dow:col(h,['요일']), addr:col(h,['주소']),
+    team:col(h,['팀']), brand:col(h,['편의점','점포 타입']), code:col(h,['점포코드','코드']) };
+  if(ci.store<0||ci.team<0){ if(!silent) msg('<span class="warn">매장명/팀 열을 못 찾았어요.</span>'); return; }
+  const next=(importMode==='merge')?Object.assign({},DATA):{};
+  const groupVal=(document.getElementById('impGroup').value||'').trim();
+  let n=0;
+  for(let r=1;r<rows.length;r++){
+    const row=rows[r];
+    const store=(row[ci.store]||'').trim(); if(!store||store.startsWith('—')) continue;
+    const team=(row[ci.team]||'').trim(); if(!team) continue;
+    const dateRaw=(ci.date>=0?row[ci.date]:'').trim();
+    const dk=normDate(dateRaw);
+    const id='v_'+team+'_'+store+'_'+dk;
+    next[id]={ id, team, type:(ci.type>=0?row[ci.type]:'점포').trim()||'점포',
+      date:dk, dateKey:dk, store, dow:(ci.dow>=0?row[ci.dow]:'').trim(),
+      addr:(ci.addr>=0?row[ci.addr]:'').trim(), brand:normBrand(ci.brand>=0?row[ci.brand]:''),
+      round:(ci.round>=0?row[ci.round]:'').trim(), storeCode:(ci.code>=0?row[ci.code]:'').trim(),
+      group:groupVal };
+    n++;
+  }
+  DATA=next; save();
+  if(!silent) msg('<span class="ok">'+n+'개 일정을 채웠어요.</span>'); toast(n+'개 일정 채움');
+}
+function importCSV(){ importCSVText(document.getElementById('csvInput').value,false); }
+function loadSample(){ document.getElementById('csvInput').value=DEMO; importCSV(); }
+function msg(html){ document.getElementById('importMsg').innerHTML=html; }
+
+function importExcel(ev){
+  const file=ev.target.files[0]; if(!file) return;
+  msg('<span style="color:var(--txt-dim)">파일 읽는 중… ('+(file.name||'')+')</span>');
+  if(typeof XLSX==='undefined'){ msg('<span class="warn">엑셀 모듈을 못 불러왔어요. 인터넷 연결 후 새로고침.</span>'); ev.target.value=''; return; }
+  const reader=new FileReader();
+  reader.onerror=()=>msg('<span class="warn">파일을 여는 데 실패했어요.</span>');
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const sheets=wb.SheetNames.map(name=>({ name, rows:XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,blankrows:false}) }));
+      mapExcelRows(sheets);
+    }catch(err){ msg('<span class="warn">엑셀을 못 읽었어요: '+(err&&err.message||err)+'</span>'); }
+  };
+  reader.readAsArrayBuffer(file);
+  ev.target.value='';
+}
+function mapExcelRows(sheets){
+  const next=(importMode==='merge')?Object.assign({},DATA):{};
+  const groupVal=(document.getElementById('impGroup').value||'').trim();
+  let n=0;
+  for(const {rows} of sheets){
+    if(!rows||!rows.length) continue;
+    const header=(rows[0]||[]).map(c=>(c==null?'':String(c).trim()));
+    const hi={ team:header.indexOf('팀'), round:header.indexOf('세일즈 진행 일차'),
+      date:header.indexOf('날짜'), dow:header.indexOf('요일'),
+      type:header.indexOf('점포/흡연구역'), brand:header.indexOf('점포 타입'),
+      store:header.indexOf('점포명'), addr:header.indexOf('주소'), code:header.indexOf('점포코드') };
+    const isNew = hi.team>=0 && hi.store>=0 && hi.type>=0 && hi.brand>=0 && hi.date>=0;
+    if(isNew){
+      for(let r=1;r<rows.length;r++){
+        const row=rows[r]; if(!row) continue;
+        const team=(row[hi.team]==null?'':String(row[hi.team])).trim();
+        const store=(row[hi.store]==null?'':String(row[hi.store])).trim().split('(')[0].trim();
+        if(!team||!store) continue;
+        const dCell=row[hi.date]; let date=null;
+        if(dCell instanceof Date) date=dCell; else if(typeof dCell==='number') date=serialToDate(dCell);
+        if(!date) continue;
+        const dateKey=(date.getUTCMonth()+1)+'.'+date.getUTCDate();
+        const id='v_'+team+'_'+store+'_'+dateKey;
+        next[id]={ id, team,
+          type:(row[hi.type]==null?'점포':String(row[hi.type]).trim())||'점포',
+          date:dateKey, dateKey, store,
+          dow:hi.dow>=0?(row[hi.dow]==null?'':String(row[hi.dow]).trim()):'',
+          addr:hi.addr>=0?(row[hi.addr]==null?'':String(row[hi.addr]).trim()):'',
+          brand:normBrand(row[hi.brand]==null?'':String(row[hi.brand]).trim()),
+          round:hi.round>=0?(row[hi.round]==null?'':String(row[hi.round]).trim()).replace('일차',''):'',
+          storeCode:hi.code>=0?(row[hi.code]==null?'':String(row[hi.code]).trim()):'',
+          group:groupVal };
+        n++;
+      }
+      continue;
+    }
+    // 옛 양식 추정
+    for(const row of rows){
+      if(!row||row.length<4) continue;
+      let team='',date=null,type='',brand='',store='',addr='',dow='',round='';
+      const teamCells=[]; row.forEach((cell,idx)=>{ const s=(cell==null?'':String(cell)).trim(); if(/팀$/.test(s)||/^#/.test(s)) teamCells.push({idx,s}); });
+      const atCol2=teamCells.find(t=>t.idx===2);
+      if(atCol2) team=atCol2.s; else if(teamCells.length) team=teamCells[teamCells.length-1].s;
+      for(const cell of row){
+        if(cell instanceof Date){ if(!date) date=cell; continue; }
+        if(typeof cell==='number'&&cell>40000&&cell<70000){ if(!date) date=serialToDate(cell); continue; }
+        const s=(cell==null?'':String(cell)).trim(); if(!s) continue;
+        if(s==='점포'||s==='흡연구역') type=s;
+        else if(/요일$/.test(s)) dow=s;
+        else if(/^\d+일차$/.test(s)){ const m=s.match(/\d+/); round=m?m[0]:''; }
+        else if(BRANDS.includes(s)) brand=normBrand(s);
+        else if(/점/.test(s)&&!/\s/.test(s)&&!store) store=s.split('(')[0].trim();
+        else if(/^(서울|경기|인천)/.test(s)&&/\s/.test(s)) addr=s;
+      }
+      if(!team||!store||!date) continue;
+      const dateKey=(date.getUTCMonth()+1)+'.'+date.getUTCDate();
+      const id='v_'+team+'_'+store+'_'+dateKey;
+      next[id]={ id, team, type:type||'점포', date:dateKey, dateKey, store, dow, addr, brand, round, storeCode:'', group:groupVal };
+      n++;
+    }
+  }
+  if(n===0){ msg('<span class="warn">매장을 못 찾았어요. 시트/양식이 다를 수 있어요 — 파일 보내주면 맞춰줄게요.</span>'); return; }
+  DATA=next; save();
+  const total=Object.keys(DATA).length;
+  msg('<span class="ok">'+n+'개 매장을 '+(importMode==='merge'?('더했어요 (전체 '+total+'곳)'):'채웠어요')+'.</span>');
+  toast((importMode==='merge'?'+':'')+n+'개 일정'); switchView('today');
+}
+function wipeData(){ if(!confirm('입력한 일정을 모두 지울까요?')) return; DATA={}; save(); toast('일정 삭제됨'); }
+
+/* ═══════════ 필터 칩 ═══════════ */
+function renderAll(){ renderFilters(); renderStoreList(); renderSchedule(); }
+function chip(label,on,extra,target){ return `<span class="chip ${extra} ${on?'on':''}" onclick="setFilter('${target}','${label}')">${label}</span>`; }
+function setFilter(target,val){
+  if(target==='filterDate') filterDate=val;
+  else if(target==='filterGroup'){ filterGroup=val; filterTeam='전체'; }
+  else filterTeam=val;
+  renderFilters(); renderStoreList();
+}
+function togglePast(){ showPast=!showPast; renderFilters(); renderStoreList(); }
+function renderFilters(){
+  const vsAll=visits();
+  const grps=uniq(vsAll.map(v=>v.group).filter(Boolean)).sort();
+  const gc=document.getElementById('groupChips');
+  if(grps.length){
+    if(!grps.includes(filterGroup)){ filterGroup=grps[0]; filterTeam='전체'; }
+    gc.style.display='flex';
+    gc.innerHTML='<span class="lbl">조</span>'+grps.map(g=>chip(g,filterGroup===g,'','filterGroup')).join('');
+  } else { gc.style.display='none'; filterGroup='전체'; }
+  const vs=(filterGroup!=='전체')?vsAll.filter(v=>(v.group||'')===filterGroup):vsAll;
+  let dates=uniq(vs.map(v=>v.dateKey).filter(Boolean)).sort((a,b)=>dateVal(a)-dateVal(b));
+  if(!showPast) dates=dates.filter(d=>!isPast(d));
+  if(filterDate!=='전체'&&filterDate!=='오늘'&&!dates.includes(filterDate)) filterDate='오늘';
+  const teams=uniq(vs.map(v=>v.team).filter(Boolean)).sort(teamSort);
+  const hasPast=uniq(vs.map(v=>v.dateKey)).some(isPast);
+  document.getElementById('dateChips').innerHTML='<span class="lbl">날짜</span>'+
+    `<span class="chip date ${filterDate==='오늘'?'on':''}" onclick="setFilter('filterDate','오늘')">오늘+다음</span>`+
+    chip('전체',filterDate==='전체','date','filterDate')+
+    dates.map(d=>chip(d,filterDate===d,'date','filterDate')).join('');
+  const pb=document.getElementById('pastBtn');
+  pb.classList.toggle('hidden',!hasPast); pb.classList.toggle('on',showPast);
+  pb.textContent=showPast?'지난날 ✕':'지난날';
+  document.getElementById('teamChips').innerHTML='<span class="lbl">팀</span>'+
+    chip('전체',filterTeam==='전체','','filterTeam')+
+    teams.map(t=>chip(t,filterTeam===t,'','filterTeam')).join('');
+}
+
+/* ═══════════ 카드 목록 ═══════════ */
+function renderStoreList(){
+  const el=document.getElementById('storeList');
+  const today=todayKey();
+  let base=visits();
+  if(filterGroup!=='전체') base=base.filter(v=>(v.group||'')===filterGroup);
+  const tv=dateVal(today);
+  const futureVals=base.map(v=>dateVal(v.dateKey)).filter(x=>x>tv).sort((a,b)=>a-b);
+  const nextVal=futureVals.length?futureVals[0]:null;
+  const tmr=nextVal!=null?base.find(v=>dateVal(v.dateKey)===nextVal).dateKey:null;
+  let vs=base;
+  if(filterDate==='오늘') vs=vs.filter(v=>v.dateKey===today||v.dateKey===tmr);
+  else if(filterDate!=='전체') vs=vs.filter(v=>v.dateKey===filterDate);
+  else if(!showPast) vs=vs.filter(v=>!isPast(v.dateKey));
+  if(filterTeam!=='전체') vs=vs.filter(v=>v.team===filterTeam);
+  if(visits().length===0){ el.innerHTML='<div class="empty"><b>아직 일정이 없어요</b>일정 탭에서 이번 달 엑셀을 넣어 시작하세요.<br><button class="btn btn-primary" onclick="switchView(\'schedule\')">일정 넣으러 가기</button></div>'; return; }
+  if(vs.length===0){ const m=filterDate==='오늘'?'오늘·다음 일정이 없어요':'해당하는 매장이 없어요'; el.innerHTML='<div class="empty"><b>'+m+'</b>날짜·팀 필터를 바꿔보세요.</div>'; return; }
+  const groups={}; vs.forEach(v=>{ (groups[v.dateKey]=groups[v.dateKey]||[]).push(v); });
+  const order=Object.keys(groups).sort((a,b)=>dateVal(a)-dateVal(b));
+  let html='';
+  order.forEach(dk=>{
+    const list=groups[dk].sort((a,b)=>teamSort(a.team,b.team));
+    const dow=list[0].dow||'';
+    let title=`${dk} ${dow}`;
+    if(dk===today) title=`오늘 — ${dk} ${dow}`;
+    else if(dk===tmr) title=`다음 — ${dk} ${dow}`;
+    html+=`<div class="daygroup-title">${title}</div>`;
+    list.forEach(v=>{ html+=card(v); });
+  });
+  el.innerHTML=html;
+}
+function card(v){
+  const naver=v.addr?`<a href="https://map.naver.com/p/search/${encodeURIComponent(v.addr)}" target="_blank" onclick="event.stopPropagation()">길찾기 ›</a>`:'';
+  return `<div class="card" onclick="openSheet('${v.id}')">
+    <div class="stripe"></div>
+    <div class="card-top"><span class="round">${v.round?('#'+v.round):''}</span><span class="name">${esc(v.store)}</span></div>
+    <div class="meta">
+      <span class="tag type">${esc(v.type)}</span>
+      <span class="tag brand">${esc(v.brand)}</span>
+      <span class="tag">${esc(v.team)}</span>
+      ${v.storeCode?`<span class="tag code">${esc(v.storeCode)}</span>`:''}
+      ${v.group?`<span class="tag" style="background:rgba(255,107,92,.14); color:var(--coral);">${esc(v.group)}</span>`:''}
+    </div>
+    ${v.addr?`<div class="addr">${esc(v.addr)} ${naver}</div>`:''}
+  </div>`;
+}
+function renderSchedule(){
+  document.getElementById('schedCount').textContent=visits().length?('· '+visits().length+'곳'):'';
+  const el=document.getElementById('schedList');
+  const vs=visits().sort((a,b)=>{ const pa=(a.dateKey||'').split('.').map(Number),pb=(b.dateKey||'').split('.').map(Number); return (pa[0]-pb[0])||(pa[1]-pb[1])||teamSort(a.team,b.team); });
+  el.innerHTML=vs.map(v=>`<div class="card" onclick="openSheet('${v.id}')" oncontextmenu="delVisit(event,'${v.id}')">
+    <div class="stripe"></div>
+    <div class="card-top"><span class="round">${v.dateKey||''}</span><span class="name" style="font-size:15px;">${esc(v.store)}</span></div>
+    <div class="meta"><span class="tag type">${esc(v.type)}</span><span class="tag">${esc(v.team)}</span><span class="tag brand">${esc(v.brand)}</span>${v.storeCode?`<span class="tag code">${esc(v.storeCode)}</span>`:''}</div>
+  </div>`).join('');
+}
+function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에서 지울까요?')){ delete DATA[id]; save(); } }
+
+/* ═══════════ 편집 시트 ═══════════ */
+function openSheet(id){
+  curId=id; const v=DATA[id]; if(!v) return;
+  document.getElementById('edStore').textContent=v.store||v.team||'보고';
+  document.getElementById('edMeta').innerHTML=`${esc(v.team)} · ${esc(v.brand)} · ${esc(v.type)} · ${v.dateKey||''} ${esc(v.dow||'')}`+(v.storeCode?`<span class="code">${esc(v.storeCode)}</span>`:'');
+  const ss=document.getElementById('s_store'); if(ss) ss.value=v.store||'';
+  const cd=document.getElementById('c_date'); if(cd) cd.value=(v.dateKey||todayKey()).replace('.','/');
+  setType(type);
+  document.getElementById('sheetBg').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+}
+function closeSheet(){ document.getElementById('sheetBg').classList.remove('open'); document.getElementById('sheet').classList.remove('open'); curId=null; }
+
+function setType(tp){
+  type=tp;
+  document.querySelectorAll('.type-chip').forEach(c=>c.classList.toggle('on',c.dataset.type===tp));
+  document.querySelectorAll('.form').forEach(f=>f.classList.add('none'));
+  const map={am:'f-sales',pm:'f-sales',live:'f-live',material:'f-material',move:'f-move',close:'f-close'};
+  document.getElementById(map[tp]).classList.remove('none');
+  render();
+}
+function setMove(m){
+  moveMode=m;
+  document.getElementById('mvConfirm').classList.toggle('on',m==='confirm');
+  document.getElementById('mvDone').classList.toggle('on',m==='done');
+  document.getElementById('mv-confirm').classList.toggle('none',m!=='confirm');
+  document.getElementById('mv-done').classList.toggle('none',m!=='done');
+  render();
+}
+function pick(group,val,btn,kind){
+  const box=btn.parentElement;
+  if(V[group]===val){ V[group]=''; btn.classList.remove('on','yes','no'); render(); return; }
+  V[group]=val;
+  box.querySelectorAll('.opt').forEach(o=>o.classList.remove('on','yes','no'));
+  btn.classList.add('on'); if(kind) btn.classList.add(kind);
+  render();
+}
+function toggleFlag(id){ FLAG[id]=!FLAG[id]; const el=document.getElementById(id); el.classList.toggle('on',FLAG[id]); el.classList.toggle('yes',FLAG[id]); render(); }
+
+/* ═══════════ 헬퍼 ═══════════ */
+const gv = id => { const e=document.getElementById(id); return e&&e.value?e.value.trim():''; };
+const n0 = id => { const e=document.getElementById(id); const v=e?e.value.trim():''; return v===''?0:(parseInt(v)||0); };
+const teamName = ()=> (curId&&DATA[curId])?DATA[curId].team:'';
+
+/* ═══════════ 보고문 ═══════════ */
+function buildText(){
+  if(type==='am'||type==='pm') return tSales(type==='am'?'오전':'오후');
+  if(type==='live') return tLive();
+  if(type==='material') return tMaterial();
+  if(type==='move') return moveMode==='confirm'?tMoveConfirm():tMoveDone();
+  if(type==='close') return tClose();
+  return '';
+}
+function tSales(when){
+  const L=[];
+  L.push(teamName()+' '+when+' 세일즈 보고');
+  L.push('□ 대상 점포 : '+gv('s_store'));
+  L.push('□ 진행 안내 : '+(V.s_guide||''));
+  L.push('□ 안내 대상 : '+(V.s_target||''));
+  L.push('□ 점포 재고 : '+gv('s_stock'));
+  L.push('□ 스틱 발주여부 : '+(V.s_stick||''));
+  L.push('□ 부스 위치 : '+gv('s_booth'));
+  L.push('□ 점포 피드백 : '+gv('s_feedback'));
+  L.push('□ 인근 점포 : '+gv('s_nearby'));
+  const b=gv('s_brand');
+  L.push('□ 활동 동의서 작성'+(b?'('+b+')':'')+' : '+(V.s_consent||''));
+  return L.join('\n');
+}
+function tLive(){
+  const L=[];
+  L.push('■ '+teamName()+' 실시간 세일즈 보고'); L.push('');
+  L.push('판매 디바이스 색상 : '+(V.l_color||''));
+  L.push('판매수량 : '+(gv('l_qty')||1));
+  L.push('판매경로 : '+(V.l_route||''));
+  L.push('회원가입 여부 : '+(V.l_join||''));
+  L.push('카톡 친추 여부 : '+(V.l_kakao||''));
+  L.push('구매혜택(스타벅스) : '+n0('l_sbux'));
+  return L.join('\n');
+}
+function tMaterial(){
+  const L=[];
+  L.push(teamName()+' 물자 체크리스트'); L.push('');
+  L.push('단말기 박스일련번호 : '+gv('m_box'));
+  L.push('단말기 일련번호: '+gv('m_serial')); L.push('');
+  L.push('타포린백 pop 테이블보 007가방 dp용 디바이스 실버 블랙');
+  L.push('재떨이');
+  L.push('스타벅스 카드 '+n0('m_sbux'));
+  L.push('리플렛'); L.push('');
+  L.push('판매용 디스플레이');
+  L.push('- 블랙 '+n0('m_black'));
+  L.push('- 실버 '+n0('m_silver'));
+  L.push('- 로즈골드 '+n0('m_rose'));
+  L.push('- 네이비 '+n0('m_navy'));
+  return L.join('\n');
+}
+function tMoveConfirm(){
+  const L=[];
+  L.push('[이동 컨펌 요청]'); L.push(teamName());
+  L.push('원점포: '+gv('mc_from'));
+  L.push('이동점포: '+gv('mc_to'));
+  L.push('사유: '+gv('mc_reason'));
+  const ex=gv('mc_extra'); if(ex){ L.push(''); L.push(ex); }
+  return L.join('\n');
+}
+function tMoveDone(){
+  const L=[];
+  L.push('[이동 완료 보고]'); L.push(teamName());
+  L.push('이동 점포 : '+gv('md_store'));
+  L.push('안내 대상 : '+(V.md_target||''));
+  L.push('점포 재고 : '+gv('md_stock'));
+  L.push('인근 점포 : '+gv('md_nearby'));
+  if(FLAG.md_agree) L.push('(안내 및 진행 동의 완료)');
+  L.push('점포 피드백 : '+gv('md_feedback'));
+  if(FLAG.md_consent){ L.push(''); L.push('활동 동의서 작성 완료했습니다!'); }
+  const ex=gv('md_extra'); if(ex){ L.push(''); L.push(ex); }
+  return L.join('\n');
+}
+function tClose(){
+  const date=gv('c_date')||todayKey().replace('.','/');
+  const L=[];
+  L.push('■ '+teamName()+' '+date+' 마감 보고'); L.push('');
+  L.push('판매/잔여수량:');
+  L.push('블랙 - '+n0('c_black_s')+'개/'+n0('c_black_r')+'개');
+  L.push('실버 - '+n0('c_silver_s')+'개/'+n0('c_silver_r')+'개');
+  L.push('로즈 - '+n0('c_rose_s')+'개/'+n0('c_rose_r')+'개');
+  L.push('블루 - '+n0('c_blue_s')+'개/'+n0('c_blue_r')+'개'); L.push('');
+  L.push('스타벅스 카드 소진/잔여 수량: '+n0('c_sbux_s')+'/'+n0('c_sbux_r'));
+  return L.join('\n');
+}
+
+/* ═══════════ 렌더 / 복사 / 공유 ═══════════ */
+function render(){ document.getElementById('preview').textContent=buildText()||'—'; }
+async function copyOut(){
+  const t=buildText();
+  try{ await navigator.clipboard.writeText(t); }
+  catch(e){ const ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  toast('복사됨 · 카톡에 붙여넣기');
+}
+async function shareOut(){
+  const t=buildText();
+  try{ if(navigator.share){ await navigator.share({text:t}); } else { await navigator.clipboard.writeText(t); toast('공유 미지원 · 복사됨'); } }
+  catch(e){ if(e&&e.name==='AbortError') return; }
+}
+let toastT;
+function toast(m){ const el=document.getElementById('toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2000); }
+
+/* ═══════════ 탭 ═══════════ */
+function switchView(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
+  document.getElementById('view-'+v).classList.add('on');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));
+  window.scrollTo(0,0);
+}
+
+/* ═══════════ 시작 ═══════════ */
+window.addEventListener('DOMContentLoaded',()=>{ load(); renderAll(); });
+</script>
+</body>
+</html>
