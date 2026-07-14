@@ -59,6 +59,8 @@
   .tag.code{background:rgba(255,107,92,.14); color:var(--coral); font-family:'JetBrains Mono',monospace;}
   .card .addr{font-size:12.5px; color:var(--txt-dim); margin-top:8px; display:flex; align-items:center; gap:5px;}
   .card .addr a{color:var(--blue); text-decoration:none; font-weight:700; margin-left:auto; flex-shrink:0;}
+  .card.saved .stripe{background:var(--green);}
+  .saved-pill{position:absolute; top:12px; right:12px; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:6px; background:rgba(56,211,159,.16); color:var(--green);}
 
   .empty{text-align:center; padding:50px 20px; color:var(--txt-faint);}
   .empty b{display:block; color:var(--txt-dim); font-size:15px; margin-bottom:6px;}
@@ -381,6 +383,7 @@
     <div class="kakao-stage"><div class="bubble" id="preview">—</div></div>
   </div>
   <div class="sheet-foot">
+    <button class="btn btn-primary" onclick="saveReport()">저장</button>
     <button class="btn btn-ghost" onclick="copyOut()">복사</button>
     <button class="btn btn-kakao share" onclick="shareOut()">공유</button>
   </div>
@@ -470,7 +473,7 @@ function importCSVText(text, silent){
       date:dk, dateKey:dk, store, dow:(ci.dow>=0?row[ci.dow]:'').trim(),
       addr:(ci.addr>=0?row[ci.addr]:'').trim(), brand:normBrand(ci.brand>=0?row[ci.brand]:''),
       round:(ci.round>=0?row[ci.round]:'').trim(), storeCode:(ci.code>=0?row[ci.code]:'').trim(),
-      group:groupVal };
+      group:groupVal, report:(DATA[id]&&DATA[id].report)?DATA[id].report:undefined };
     n++;
   }
   DATA=next; save();
@@ -527,7 +530,7 @@ function mapExcelRows(sheets){
           brand:normBrand(row[hi.brand]==null?'':String(row[hi.brand]).trim()),
           round:hi.round>=0?(row[hi.round]==null?'':String(row[hi.round]).trim()).replace('일차',''):'',
           storeCode:hi.code>=0?(row[hi.code]==null?'':String(row[hi.code]).trim()):'',
-          group:groupVal };
+          group:groupVal, report:(DATA[id]&&DATA[id].report)?DATA[id].report:undefined };
         n++;
       }
       continue;
@@ -553,7 +556,7 @@ function mapExcelRows(sheets){
       if(!team||!store||!date) continue;
       const dateKey=(date.getUTCMonth()+1)+'.'+date.getUTCDate();
       const id='v_'+team+'_'+store+'_'+dateKey;
-      next[id]={ id, team, type:type||'점포', date:dateKey, dateKey, store, dow, addr, brand, round, storeCode:'', group:groupVal };
+      next[id]={ id, team, type:type||'점포', date:dateKey, dateKey, store, dow, addr, brand, round, storeCode:'', group:groupVal, report:(DATA[id]&&DATA[id].report)?DATA[id].report:undefined };
       n++;
     }
   }
@@ -631,8 +634,8 @@ function renderStoreList(){
 }
 function card(v){
   const naver=v.addr?`<a href="https://map.naver.com/p/search/${encodeURIComponent(v.addr)}" target="_blank" onclick="event.stopPropagation()">길찾기 ›</a>`:'';
-  return `<div class="card" onclick="openSheet('${v.id}')">
-    <div class="stripe"></div>
+  return `<div class="card${v.report?' saved':''}" onclick="openSheet('${v.id}')">
+    <div class="stripe"></div>${v.report?'<span class="saved-pill">저장됨</span>':''}
     <div class="card-top"><span class="round">${v.round?('#'+v.round):''}</span><span class="name">${esc(v.store)}</span></div>
     <div class="meta">
       <span class="tag type">${esc(v.type)}</span>
@@ -657,22 +660,70 @@ function renderSchedule(){
 function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에서 지울까요?')){ delete DATA[id]; save(); } }
 
 /* ═══════════ 편집 시트 ═══════════ */
+const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand',
+  'l_sbux','m_box','m_serial','m_sbux','m_black','m_silver','m_rose','m_navy',
+  'mc_from','mc_to','mc_reason','mc_extra','md_store','md_stock','md_nearby','md_feedback','md_extra',
+  'c_date','c_black_s','c_black_r','c_silver_s','c_silver_r','c_rose_s','c_rose_r','c_blue_s','c_blue_r','c_sbux_s','c_sbux_r'];
+const FLAG_IDS=['md_agree','md_consent'];
+
+function resetSheet(){
+  FIELD_IDS.forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  Object.keys(V).forEach(k=>delete V[k]);
+  Object.keys(FLAG).forEach(k=>delete FLAG[k]);
+  Object.keys(CC).forEach(k=>delete CC[k]);
+  moveMode='confirm';
+  document.querySelectorAll('#sheet .opt').forEach(o=>o.classList.remove('on','yes','no'));
+}
+function applyPickUI(){
+  document.querySelectorAll('#sheet .opts[data-group]').forEach(box=>{
+    box.querySelectorAll('.opt').forEach(o=>o.classList.remove('on','yes','no'));
+    const val=V[box.dataset.group]; if(!val) return;
+    const btn=box.querySelector('.opt[data-val="'+val+'"]');
+    if(btn){ btn.classList.add('on'); if(btn.dataset.kind) btn.classList.add(btn.dataset.kind); }
+  });
+}
+function applyFlagUI(){ FLAG_IDS.forEach(id=>{ const el=document.getElementById(id); if(el){ el.classList.toggle('on',!!FLAG[id]); el.classList.toggle('yes',!!FLAG[id]); } }); }
+function tagOptVals(){
+  document.querySelectorAll('#sheet .opts[data-group] .opt').forEach(o=>{
+    const oc=o.getAttribute('onclick')||'';
+    const m=oc.match(/pick\('[^']*',\s*'([^']*)'/); if(m) o.dataset.val=m[1];
+    const mk=oc.match(/,\s*'(yes|no)'\)/); if(mk) o.dataset.kind=mk[1];
+  });
+}
+
 function openSheet(id){
   curId=id; const v=DATA[id]; if(!v) return;
   document.getElementById('edStore').textContent=v.store||v.team||'보고';
   document.getElementById('edMeta').innerHTML=`${esc(v.team)} · ${esc(v.brand)} · ${esc(v.type)} · ${v.dateKey||''} ${esc(v.dow||'')}`+(v.storeCode?`<span class="code">${esc(v.storeCode)}</span>`:'');
-  const ss=document.getElementById('s_store'); if(ss) ss.value=v.store||'';
-  const cd=document.getElementById('c_date'); if(cd) cd.value=(v.dateKey||todayKey()).replace('.','/');
-  // 설정에 고정한 일련번호 자동 채움 (물자 체크리스트)
-  const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
-  if(bs){ const mb=document.getElementById('m_box'); if(mb) mb.value=bs; }
-  if(sr){ const ms=document.getElementById('m_serial'); if(ms) ms.value=sr; }
-  // 실시간 색상 수량 초기화 후 다시 그리기
-  Object.keys(CC).forEach(k=>delete CC[k]);
-  buildLiveColors();
+  resetSheet();
+  const rep=v.report;
+  if(rep&&rep.inputs){
+    Object.entries(rep.inputs).forEach(([k,val])=>{ const e=document.getElementById(k); if(e) e.value=val; });
+    Object.assign(V, rep.V||{});
+    Object.assign(FLAG, rep.FLAG||{});
+    Object.assign(CC, rep.CC||{});
+    moveMode=rep.moveMode||'confirm';
+    type=rep.type||'am';
+  } else {
+    const ss=document.getElementById('s_store'); if(ss) ss.value=v.store||'';
+    const cd=document.getElementById('c_date'); if(cd) cd.value=(v.dateKey||todayKey()).replace('.','/');
+    const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
+    if(bs){ const mb=document.getElementById('m_box'); if(mb) mb.value=bs; }
+    if(sr){ const ms=document.getElementById('m_serial'); if(ms) ms.value=sr; }
+  }
+  applyPickUI(); applyFlagUI(); buildLiveColors();
+  setMove(moveMode);
   setType(type);
   document.getElementById('sheetBg').classList.add('open');
   document.getElementById('sheet').classList.add('open');
+}
+function saveReport(){
+  if(!curId||!DATA[curId]){ toast('먼저 점포를 선택해줘'); return; }
+  const inputs={};
+  FIELD_IDS.forEach(id=>{ const e=document.getElementById(id); if(e) inputs[id]=e.value; });
+  DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), CC:Object.assign({},CC), moveMode, type, savedAt:Date.now() };
+  save();
+  toast('저장됨 ✓');
 }
 function closeSheet(){ document.getElementById('sheetBg').classList.remove('open'); document.getElementById('sheet').classList.remove('open'); curId=null; }
 
@@ -856,7 +907,7 @@ function switchView(v){
 }
 
 /* ═══════════ 시작 ═══════════ */
-window.addEventListener('DOMContentLoaded',()=>{ load(); renderAll(); renderSettings(); buildLiveColors(); });
+window.addEventListener('DOMContentLoaded',()=>{ load(); renderAll(); renderSettings(); buildLiveColors(); tagOptVals(); });
 </script>
 </body>
 </html>
