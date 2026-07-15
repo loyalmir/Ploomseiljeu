@@ -49,6 +49,8 @@
   .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 14px 13px; margin-bottom:10px; cursor:pointer; transition:.12s; position:relative; overflow:hidden;}
   .card:active{transform:scale(.99);}
   .card .stripe{position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--blue);}
+  .card.saved .stripe{background:var(--green);}
+  .saved-pill{position:absolute; top:12px; right:12px; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:6px; background:rgba(56,211,159,.16); color:var(--green);}
   .card-top{display:flex; align-items:baseline; gap:8px; margin-bottom:5px;}
   .card .round{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--txt-faint); font-weight:700;}
   .card .name{font-size:16px; font-weight:800; letter-spacing:-.3px;}
@@ -59,8 +61,6 @@
   .tag.code{background:rgba(255,107,92,.14); color:var(--coral); font-family:'JetBrains Mono',monospace;}
   .card .addr{font-size:12.5px; color:var(--txt-dim); margin-top:8px; display:flex; align-items:center; gap:5px;}
   .card .addr a{color:var(--blue); text-decoration:none; font-weight:700; margin-left:auto; flex-shrink:0;}
-  .card.saved .stripe{background:var(--green);}
-  .saved-pill{position:absolute; top:12px; right:12px; font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:6px; background:rgba(56,211,159,.16); color:var(--green);}
 
   .empty{text-align:center; padding:50px 20px; color:var(--txt-faint);}
   .empty b{display:block; color:var(--txt-dim); font-size:15px; margin-bottom:6px;}
@@ -69,9 +69,11 @@
   button{font-family:inherit;}
   .btn{border:none; border-radius:var(--r-sm); padding:13px 16px; font-size:15px; font-weight:800; cursor:pointer; transition:.12s; display:inline-flex; align-items:center; justify-content:center; gap:7px;}
   .btn-primary{background:var(--blue); color:#fff;} .btn-primary:active{background:var(--blue-deep);}
+  .btn-green{background:var(--green); color:#08251A;}
   .btn-kakao{background:var(--kakao); color:var(--kakao-ink);}
   .btn-ghost{background:var(--surface-2); color:var(--txt); border:1px solid var(--line);}
   .btn-block{width:100%;}
+  .btn-sm{padding:9px 12px; font-size:13px;}
 
   nav{position:fixed; bottom:0; left:0; right:0; z-index:40; background:var(--ink-2); border-top:1px solid var(--line-soft); display:flex; padding:8px 0 calc(8px + env(safe-area-inset-bottom));}
   nav button{flex:1; background:none; border:none; color:var(--txt-faint); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px 0; font-size:11px; font-weight:700;}
@@ -111,6 +113,7 @@
   .opt.on{background:rgba(74,140,255,.16); border-color:var(--blue); color:var(--blue);}
   .opt.on.no{background:rgba(255,107,92,.16); border-color:var(--coral); color:var(--coral);}
   .opt.on.yes{background:rgba(56,211,159,.16); border-color:var(--green); color:var(--green);}
+  .opt .cnt{margin-left:6px; font-family:'JetBrains Mono',monospace; font-weight:800;}
 
   .seg{display:flex; background:var(--surface); border-radius:var(--r-sm); padding:4px; gap:4px; margin-bottom:15px;}
   .seg button{flex:1; padding:10px; border:none; background:none; color:var(--txt-dim); font-weight:800; font-size:14px; border-radius:7px; cursor:pointer; transition:.12s;}
@@ -123,10 +126,37 @@
   .qty-row input{width:64px; flex-shrink:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; color:var(--txt); font-family:'JetBrains Mono',monospace; font-size:15px; padding:9px 6px; text-align:center;}
   .qty-row input:focus{outline:none; border-color:var(--blue);}
   .qty-row .slash{color:var(--txt-faint); font-weight:800; padding:0 2px;}
+  .qty-total{width:64px; flex-shrink:0; text-align:center; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; color:var(--blue); background:rgba(74,140,255,.1); border:1px solid rgba(74,140,255,.2); border-radius:9px; padding:9px 6px;}
+
+  /* 물자 행: 보유 − 판매 = 잔여 */
+  .mat-head{display:flex; gap:6px; font-size:11px; font-weight:700; color:var(--txt-faint); margin-bottom:6px; padding:0 2px;}
+  .mat-head .n{flex:1;} .mat-head .a{width:62px; text-align:center;} .mat-head .b{width:44px; text-align:center;} .mat-head .c{width:52px; text-align:center;}
+  .mat-row{display:flex; gap:6px; align-items:center; margin-bottom:7px;}
+  .mat-row .nm{flex:1; font-size:14px; font-weight:700; padding-left:2px;}
+  .mat-row input{width:62px; flex-shrink:0; background:var(--surface); border:1px solid var(--line); border-radius:9px; color:var(--txt); font-family:'JetBrains Mono',monospace; font-size:15px; padding:9px 4px; text-align:center;}
+  .mat-row input:focus{outline:none; border-color:var(--blue);}
+  .mat-row .sold{width:44px; flex-shrink:0; text-align:center; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:14px; color:var(--coral);}
+  .mat-row .sold.zero{color:var(--txt-faint);}
+  .mat-row .left{width:52px; flex-shrink:0; text-align:center; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; color:var(--green); background:rgba(56,211,159,.1); border:1px solid rgba(56,211,159,.2); border-radius:9px; padding:9px 2px;}
+  .mat-row .left.neg{color:var(--coral); background:rgba(255,107,92,.1); border-color:rgba(255,107,92,.25);}
 
   .grp{border-top:1px solid var(--line-soft); margin:4px 0 15px; padding-top:14px;}
   .grp:first-child{border-top:none; padding-top:0;}
-  .grp-t{font-size:12px; font-weight:800; color:var(--txt-faint); letter-spacing:.4px; margin-bottom:11px;}
+  .grp-t{font-size:12px; font-weight:800; color:var(--txt-faint); letter-spacing:.4px; margin-bottom:11px; display:flex; align-items:center; gap:8px;}
+  .grp-t .right{margin-left:auto;}
+
+  .mat-note{font-size:12px; font-weight:700; padding:10px 12px; border-radius:var(--r-sm); margin-bottom:14px; line-height:1.5;}
+  .mat-note.inherit{background:rgba(255,194,75,.12); color:var(--amber); border:1px solid rgba(255,194,75,.25);}
+  .mat-note.own{background:rgba(56,211,159,.12); color:var(--green); border:1px solid rgba(56,211,159,.25);}
+  .mat-note.new{background:var(--surface); color:var(--txt-dim); border:1px solid var(--line);}
+
+  /* 판매 장부 */
+  .led{background:var(--surface); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 12px; margin-bottom:7px; display:flex; align-items:center; gap:9px;}
+  .led .t{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--txt-faint); flex-shrink:0;}
+  .led .c{font-size:13.5px; font-weight:800; color:var(--txt);}
+  .led .s{font-size:11px; color:var(--txt-dim); margin-top:2px;}
+  .led .x{margin-left:auto; flex-shrink:0; width:30px; height:30px; border-radius:8px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt-faint); cursor:pointer; font-size:13px;}
+  .led-empty{font-size:12.5px; color:var(--txt-faint); padding:12px 2px;}
 
   .preview-label{font-size:12px; font-weight:700; color:var(--txt-dim); margin:8px 0 9px; display:flex; align-items:center; gap:7px;}
   .preview-label .live{width:7px; height:7px; border-radius:50%; background:var(--green); animation:blink 1.6s infinite;}
@@ -134,7 +164,7 @@
   .kakao-stage{display:flex; justify-content:flex-end; padding:4px 0 2px;}
   .bubble{background:var(--kakao); color:var(--kakao-ink); border-radius:16px 4px 16px 16px; padding:13px 15px; max-width:88%; font-size:14.5px; line-height:1.62; font-weight:500; white-space:pre-wrap; word-break:break-word; box-shadow:0 4px 16px rgba(0,0,0,.25);}
   .sheet-foot{padding:12px 18px calc(14px + env(safe-area-inset-bottom)); border-top:1px solid var(--line-soft); display:flex; gap:9px; background:var(--ink-2);}
-  .sheet-foot .btn{flex:1;} .sheet-foot .btn.share{flex:1.6;}
+  .sheet-foot .btn{flex:1;} .sheet-foot .btn.share{flex:1.4;}
 
   .panel{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; margin-bottom:13px;}
   .panel h3{margin:0 0 4px; font-size:15px; font-weight:800;}
@@ -143,17 +173,15 @@
   .hint .ok{color:var(--green);} .hint .warn{color:var(--amber);}
   .row{display:flex; gap:9px; align-items:center;}
 
+  /* 설정 색상 편집 */
+  .col-head{display:flex; gap:6px; font-size:10.5px; font-weight:700; color:var(--txt-faint); margin-bottom:6px; padding:0 2px;}
+  .col-head span{flex:1;}
+  .color-row{display:flex; gap:6px; margin-bottom:8px; align-items:center;}
+  .color-row input{flex:1; min-width:0; padding:10px 8px; font-size:13.5px;}
+  .mini-del{flex-shrink:0; width:34px; height:38px; border-radius:9px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt-faint); font-size:14px; cursor:pointer; line-height:1;}
+
   .toast{position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--txt); color:var(--ink); padding:11px 20px; border-radius:24px; font-weight:800; font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:99; box-shadow:0 8px 30px rgba(0,0,0,.4);}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
-  .qty-total{width:64px; flex-shrink:0; text-align:center; font-family:'JetBrains Mono',monospace; font-weight:800; font-size:15px; color:var(--blue); background:rgba(74,140,255,.1); border:1px solid rgba(74,140,255,.2); border-radius:9px; padding:9px 6px;}
-  .opt .cnt{margin-left:6px; font-family:'JetBrains Mono',monospace; font-weight:800;}
-  .color-row{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
-  .color-row input{flex:1;}
-  .mini-del{flex-shrink:0; width:36px; height:36px; border-radius:9px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt-faint); font-size:15px; cursor:pointer; line-height:1;}
-  .mat-note{font-size:12px; font-weight:700; padding:10px 12px; border-radius:var(--r-sm); margin-bottom:14px; line-height:1.5;}
-  .mat-note.inherit{background:rgba(255,194,75,.12); color:var(--amber); border:1px solid rgba(255,194,75,.25);}
-  .mat-note.own{background:rgba(56,211,159,.12); color:var(--green); border:1px solid rgba(56,211,159,.25);}
-  .mat-note.new{background:var(--surface); color:var(--txt-dim); border:1px solid var(--line);}
   .view{display:none;} .view.on{display:block;}
   .none{display:none;}
 </style>
@@ -164,7 +192,7 @@
   <div class="brand"><span class="dot"></span><h1>Ploom 세일즈 보고</h1><span class="sync">로컬 저장</span></div>
 </header>
 
-<!-- ════ 보고 (날짜·팀 필터 + 카드) ════ -->
+<!-- ════ 보고 ════ -->
 <section class="view on" id="view-today">
   <div class="filters">
     <div class="filter-row" id="groupChips" style="display:none;"><span class="lbl">조</span></div>
@@ -177,7 +205,32 @@
   <main id="storeList"></main>
 </section>
 
-<!-- ════ 일정 (엑셀) ════ -->
+<!-- ════ 설정 ════ -->
+<section class="view" id="view-settings">
+  <main>
+    <div class="panel">
+      <h3>단말기 일련번호 (고정)</h3>
+      <p>여기 적어두면 <b>물자 체크리스트</b>에 자동으로 채워집니다.</p>
+      <div class="field"><label>단말기 박스 일련번호</label><input type="text" class="mono" id="set_box" placeholder="예) ZC26030031" oninput="saveBoxSerial(this.value)"></div>
+      <div class="field" style="margin-bottom:0;"><label>단말기 일련번호</label><input type="text" class="mono" id="set_serial" placeholder="예) 101209" oninput="saveSerial(this.value)"></div>
+    </div>
+    <div class="panel">
+      <h3>디바이스 색상</h3>
+      <p>색 하나가 보고마다 다르게 불려서, 세 가지 이름을 묶어 둡니다. 실시간에서 팔면 물자에서 그 색이 빠지고 마감에 반영돼요.</p>
+      <div class="col-head"><span>실시간 이름</span><span>물자 이름</span><span>마감 이름</span><span style="flex:0 0 34px;"></span></div>
+      <div id="colorList"></div>
+      <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="addColor()">+ 색상 추가</button>
+      <div class="hint">예) 실시간 <b>블루</b> = 물자 <b>네이비</b> = 마감 <b>블루</b> — 같은 줄에 적으면 하나의 디바이스로 계산됩니다.</div>
+    </div>
+    <div class="panel">
+      <h3>판매 기록 초기화</h3>
+      <p>실시간 판매 누적 기록과 물자 기록을 모두 지웁니다. 일정은 남습니다.</p>
+      <button class="btn btn-ghost btn-block" onclick="wipeLedger()">판매·물자 기록 삭제</button>
+    </div>
+  </main>
+</section>
+
+<!-- ════ 일정 ════ -->
 <section class="view" id="view-schedule">
   <main>
     <div class="panel">
@@ -192,11 +245,10 @@
         <input type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,*/*" hidden onchange="importExcel(event)">
       </label>
       <div class="hint" id="importMsg"></div>
-      <div class="hint">헤더는 <b>팀 / 세일즈 진행 일차 / 날짜 / 요일 / 점포/흡연구역 / 점포 타입 / 점포명 / 주소 / 점포코드</b> 를 인식합니다. (현장보고 앱과 같은 엑셀)</div>
+      <div class="hint">헤더는 <b>팀 / 세일즈 진행 일차 / 날짜 / 요일 / 점포/흡연구역 / 점포 타입 / 점포명 / 주소 / 점포코드</b> 를 인식합니다.</div>
     </div>
     <div class="panel">
       <h3>또는 CSV 붙여넣기</h3>
-      <p>노션 체크리스트를 복사해 붙여 넣어도 됩니다.</p>
       <textarea id="csvInput" placeholder="여기에 CSV 붙여넣기…" style="min-height:80px; font-size:13px;" class="mono"></textarea>
       <div class="row" style="margin-top:11px;">
         <button class="btn btn-ghost" style="flex:1;" onclick="importCSV()">CSV 채우기</button>
@@ -209,24 +261,6 @@
       <button class="btn btn-ghost btn-block" onclick="wipeData()">전체 일정 삭제</button>
     </div>
     <div id="schedList"></div>
-  </main>
-</section>
-
-<!-- ════ 설정 ════ -->
-<section class="view" id="view-settings">
-  <main>
-    <div class="panel">
-      <h3>단말기 일련번호 (고정)</h3>
-      <p>여기 적어두면 <b>물자 체크리스트</b>를 열 때마다 자동으로 채워집니다. 모든 날짜에 적용돼요.</p>
-      <div class="field"><label>단말기 박스 일련번호</label><input type="text" class="mono" id="set_box" placeholder="예) ZC26030031" oninput="saveBoxSerial(this.value)"></div>
-      <div class="field" style="margin-bottom:0;"><label>단말기 일련번호</label><input type="text" class="mono" id="set_serial" placeholder="예) 101209" oninput="saveSerial(this.value)"></div>
-    </div>
-    <div class="panel">
-      <h3>판매 디바이스 색상</h3>
-      <p>실시간 세일즈에서 고를 색상 목록입니다. 추가·수정·삭제할 수 있어요.</p>
-      <div id="colorList"></div>
-      <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="addColor()">+ 색상 추가</button>
-    </div>
   </main>
 </section>
 
@@ -292,7 +326,7 @@
     <!-- 03 실시간 -->
     <div class="form none" id="f-live">
       <div class="field">
-        <label>판매 디바이스 색상 <span class="o">(탭할 때마다 +1 · 최대 2 · 여러 색 중복 가능)</span></label>
+        <label>판매 디바이스 색상 <span class="o">(탭할 때마다 +1 · 최대 2 · 여러 색 가능)</span></label>
         <div class="opts" id="l_colors"></div>
       </div>
       <div class="qty-row" style="margin-bottom:15px;"><span class="nm">총 판매수량</span><span id="l_qtyTotal" class="qty-total">0</span></div>
@@ -317,7 +351,12 @@
           <span class="opt" onclick="pick('l_kakao','X',this,'no')">X</span>
         </div>
       </div>
-      <div class="qty-row"><span class="nm">구매혜택(스타벅스)</span><input type="text" inputmode="numeric" id="l_sbux" placeholder="0" oninput="render()"></div>
+      <div class="qty-row" style="margin-bottom:16px;"><span class="nm">구매혜택(스타벅스)</span><input type="text" inputmode="numeric" id="l_sbux" placeholder="0" oninput="render()"></div>
+      <div class="grp">
+        <div class="grp-t">이 날 판매 누적 <span id="ledgerCount" class="right mono"></span></div>
+        <div id="ledgerList"></div>
+        <div class="hint">아래 <b>판매 기록 +</b> 를 누르면 이 목록에 쌓이고, 물자에서 자동으로 빠집니다.</div>
+      </div>
     </div>
 
     <!-- 04 물자 -->
@@ -325,16 +364,20 @@
       <div id="matNote" class="mat-note"></div>
       <div class="grp"><div class="grp-t">단말기</div>
         <div class="field"><label>단말기 박스 일련번호</label><input type="text" class="mono" id="m_box" placeholder="예) ZC26030031" oninput="render()"></div>
-        <div class="field"><label>단말기 일련번호</label><input type="text" class="mono" id="m_serial" placeholder="예) 101209" oninput="render()"></div>
-      </div>
-      <div class="grp"><div class="grp-t">스타벅스 카드</div>
-        <div class="qty-row"><span class="nm">카드 수량</span><input type="text" inputmode="numeric" id="m_sbux" placeholder="0" oninput="render()"></div>
+        <div class="field" style="margin-bottom:4px;"><label>단말기 일련번호</label><input type="text" class="mono" id="m_serial" placeholder="예) 101209" oninput="render()"></div>
       </div>
       <div class="grp"><div class="grp-t">판매용 디스플레이</div>
-        <div class="qty-row"><span class="nm">블랙</span><input type="text" inputmode="numeric" id="m_black" placeholder="0" oninput="render()"></div>
-        <div class="qty-row"><span class="nm">실버</span><input type="text" inputmode="numeric" id="m_silver" placeholder="0" oninput="render()"></div>
-        <div class="qty-row"><span class="nm">로즈골드</span><input type="text" inputmode="numeric" id="m_rose" placeholder="0" oninput="render()"></div>
-        <div class="qty-row"><span class="nm">네이비</span><input type="text" inputmode="numeric" id="m_navy" placeholder="0" oninput="render()"></div>
+        <div class="mat-head"><span class="n"></span><span class="a">보유</span><span class="b">판매</span><span class="c">잔여</span></div>
+        <div id="matRows"></div>
+      </div>
+      <div class="grp"><div class="grp-t">스타벅스 카드</div>
+        <div class="mat-head"><span class="n"></span><span class="a">보유</span><span class="b">소진</span><span class="c">잔여</span></div>
+        <div class="mat-row">
+          <span class="nm">카드</span>
+          <input type="text" inputmode="numeric" id="m_sbux" placeholder="0" oninput="refreshMatCalc(); render()">
+          <span class="sold" id="msold_sbux">−0</span>
+          <span class="left" id="mleft_sbux">0</span>
+        </div>
       </div>
     </div>
 
@@ -370,17 +413,21 @@
 
     <!-- 06 마감 -->
     <div class="form none" id="f-close">
+      <div id="closeNote" class="mat-note own"></div>
       <div class="field"><label>마감 날짜 <span class="o">(일정 날짜 자동 · 수정 가능)</span></label><input type="text" class="mono" id="c_date" placeholder="예) 7/6" oninput="render()"></div>
-      <div class="grp"><div class="grp-t">판매 / 잔여 수량</div>
+      <div class="grp">
+        <div class="grp-t">판매 / 잔여 수량
+          <button class="btn btn-ghost btn-sm right" onclick="recalcClose()">물자에서 다시 계산</button>
+        </div>
         <div class="qty-head"><span class="n"></span><span class="c">판매</span><span class="c">잔여</span></div>
-        <div class="qty-row"><span class="nm">블랙</span><input type="text" inputmode="numeric" id="c_black_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_black_r" placeholder="0" oninput="render()"></div>
-        <div class="qty-row"><span class="nm">실버</span><input type="text" inputmode="numeric" id="c_silver_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_silver_r" placeholder="0" oninput="render()"></div>
-        <div class="qty-row"><span class="nm">로즈</span><input type="text" inputmode="numeric" id="c_rose_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_rose_r" placeholder="0" oninput="render()"></div>
-        <div class="qty-row"><span class="nm">블루</span><input type="text" inputmode="numeric" id="c_blue_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_blue_r" placeholder="0" oninput="render()"></div>
+        <div id="closeRows"></div>
       </div>
       <div class="grp"><div class="grp-t">스타벅스 카드</div>
         <div class="qty-head"><span class="n"></span><span class="c">소진</span><span class="c">잔여</span></div>
-        <div class="qty-row"><span class="nm">카드</span><input type="text" inputmode="numeric" id="c_sbux_s" placeholder="0" oninput="render()"><span class="slash">/</span><input type="text" inputmode="numeric" id="c_sbux_r" placeholder="0" oninput="render()"></div>
+        <div class="qty-row"><span class="nm">카드</span>
+          <input type="text" inputmode="numeric" id="c_sbux_s" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()"><span class="slash">/</span>
+          <input type="text" inputmode="numeric" id="c_sbux_r" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()">
+        </div>
       </div>
     </div>
 
@@ -388,7 +435,7 @@
     <div class="kakao-stage"><div class="bubble" id="preview">—</div></div>
   </div>
   <div class="sheet-foot">
-    <button class="btn btn-primary" onclick="saveReport()">저장</button>
+    <button class="btn btn-primary" id="mainBtn" onclick="mainAction()">저장</button>
     <button class="btn btn-ghost" onclick="copyOut()">복사</button>
     <button class="btn btn-kakao share" onclick="shareOut()">공유</button>
   </div>
@@ -408,47 +455,230 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 /* ═══════════ 상태 ═══════════ */
-let DATA = {};
-let curId = null;
+let DATA={};        // 일정 (점포별)
+let MAT={};         // 물자   MAT[teamKey][date] = {m_box,m_serial,sbux,qty:{colorId:n}}
+let LEDGER={};      // 판매장부 LEDGER[teamKey][date] = [ {id,store,qty:{},route,join,kakao,sbux,at} ]
+let curId=null;
 let filterDate='', filterTeam='전체', filterGroup='전체';
 let showPast=false, importMode='replace';
 let type='am', moveMode='confirm';
-const V={}, FLAG={};
-const CC={};   // 실시간 색상별 판매수량 (0~2)
-const DEFAULT_COLORS=['블랙','실버','로즈골드','블루','네이비'];
-let COLORS=loadColors();
-function loadColors(){ try{ const a=JSON.parse(localStorage.getItem('ploomSalesColors')||'null'); return (Array.isArray(a)&&a.length)?a:DEFAULT_COLORS.slice(); }catch(e){ return DEFAULT_COLORS.slice(); } }
-function saveColors(){ localStorage.setItem('ploomSalesColors', JSON.stringify(COLORS)); }
-function getSerial(k){ return localStorage.getItem(k)||''; }
+let closeAuto=true, mcFromTouched=false;
+const V={}, FLAG={}, CC={};
 
-/* ═══════════ 날짜 헬퍼 ═══════════ */
+/* ── 색상: 한 색 = 실시간/물자/마감 세 이름 ── */
+const DEFAULT_COLORS=[
+  {id:'black',  live:'블랙',     mat:'블랙',     close:'블랙'},
+  {id:'silver', live:'실버',     mat:'실버',     close:'실버'},
+  {id:'rose',   live:'로즈골드',  mat:'로즈골드',  close:'로즈'},
+  {id:'navy',   live:'블루',     mat:'네이비',    close:'블루'}
+];
+let COLORS=loadColors();
+function loadColors(){
+  try{
+    const a=JSON.parse(localStorage.getItem('ploomSalesColorsV2')||'null');
+    if(Array.isArray(a)&&a.length&&a[0]&&a[0].id) return a;
+  }catch(e){}
+  return DEFAULT_COLORS.map(c=>Object.assign({},c));
+}
+function saveColors(){ localStorage.setItem('ploomSalesColorsV2', JSON.stringify(COLORS)); }
+function getSerial(k){ return localStorage.getItem(k)||''; }
+function saveBoxSerial(v){ localStorage.setItem('ploomSalesBoxSerial', v.trim()); }
+function saveSerial(v){ localStorage.setItem('ploomSalesSerial', v.trim()); }
+
+/* ═══════════ 헬퍼 ═══════════ */
 function todayKey(){ const d=new Date(); return (d.getMonth()+1)+'.'+d.getDate(); }
 function dateVal(k){ const p=(k||'').split('.').map(Number); return (p[0]||0)*100+(p[1]||0); }
 function isPast(k){ return dateVal(k) < dateVal(todayKey()); }
 function uniq(arr){ return [...new Set(arr)]; }
 function visits(){ return Object.values(DATA); }
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
-/* 대상 점포 표기: 브랜드 + 점포명 (예: 이마트24 가산모비우스점) */
+function teamSort(a,b){ const rank=t=>/^[A-Za-z]/.test(t)?0:1; const ra=rank(a),rb=rank(b); return ra!==rb?ra-rb:a.localeCompare(b,'ko',{numeric:true}); }
+function toInt(x){ const n=parseInt(x); return isNaN(n)?0:n; }
+const gv = id => { const e=document.getElementById(id); return e&&e.value?e.value.trim():''; };
+const n0 = id => toInt(gv(id));
+const teamName = ()=> (curId&&DATA[curId])?DATA[curId].team:'';
 function fullStore(v){
   const b=(v&&v.brand||'').trim(), s=(v&&v.store||'').trim();
-  if(!b) return s;
-  if(!s) return b;
+  if(!b) return s; if(!s) return b;
   if(s.replace(/\s/g,'').toUpperCase().startsWith(b.replace(/\s/g,'').toUpperCase())) return s;
   return b+' '+s;
 }
-function teamSort(a,b){ const rank=t=>/^[A-Za-z]/.test(t)?0:1; const ra=rank(a),rb=rank(b); return ra!==rb?ra-rb:a.localeCompare(b,'ko',{numeric:true}); }
 
 /* ═══════════ 저장 ═══════════ */
 function save(){ localStorage.setItem('ploomSalesVisits', JSON.stringify(DATA)); renderAll(); }
 function load(){ try{ DATA=JSON.parse(localStorage.getItem('ploomSalesVisits')||'{}'); }catch(e){ DATA={}; } }
+function loadMat(){ try{ MAT=JSON.parse(localStorage.getItem('ploomSalesMat')||'{}'); }catch(e){ MAT={}; } }
+function persistMat(){ localStorage.setItem('ploomSalesMat', JSON.stringify(MAT)); }
+function loadLedger(){ try{ LEDGER=JSON.parse(localStorage.getItem('ploomSalesLedger')||'{}'); }catch(e){ LEDGER={}; } }
+function persistLedger(){ localStorage.setItem('ploomSalesLedger', JSON.stringify(LEDGER)); }
+function wipeLedger(){ if(!confirm('판매 누적 기록과 물자 기록을 모두 지울까요?')) return; LEDGER={}; MAT={}; persistLedger(); persistMat(); toast('기록 삭제됨'); }
 
-/* ═══════════ 엑셀 / CSV import ═══════════ */
+/* ═══════════ 판매 장부 ═══════════ */
+function matKey(v){ return (v.group||'')+'|'+(v.team||''); }
+function ledgerAt(k,date){ return (LEDGER[k]||{})[date]||[]; }
+function soldAt(k,date){
+  const out={sbux:0}; COLORS.forEach(c=>out[c.id]=0);
+  ledgerAt(k,date).forEach(e=>{
+    Object.entries(e.qty||{}).forEach(([cid,n])=>{ out[cid]=(out[cid]||0)+toInt(n); });
+    out.sbux+=toInt(e.sbux);
+  });
+  return out;
+}
+function addSale(v){
+  const qty={}; let total=0;
+  COLORS.forEach(c=>{ const n=CC[c.id]||0; if(n>0){ qty[c.id]=n; total+=n; } });
+  if(total===0){ toast('판매한 색상을 먼저 눌러줘'); return; }
+  const k=matKey(v);
+  // 이 날 물자가 아직 확정 안 됐으면 지금 값(이어받은 시작수량)으로 확정 → 다음날 연결이 끊기지 않게
+  if(!(MAT[k]&&MAT[k][v.dateKey])) saveMatFor(v);
+  LEDGER[k]=LEDGER[k]||{}; LEDGER[k][v.dateKey]=LEDGER[k][v.dateKey]||[];
+  LEDGER[k][v.dateKey].push({
+    id:'s'+Date.now(), store:gv('s_store')||fullStore(v), qty,
+    route:V.l_route||'', join:V.l_join||'', kakao:V.l_kakao||'', sbux:n0('l_sbux'),
+    at:new Date().toISOString()
+  });
+  persistLedger();
+  toast('판매 기록됨 ✓ 물자에서 차감');
+  // 다음 판매를 위해 색상만 리셋
+  Object.keys(CC).forEach(x=>delete CC[x]);
+  const ls=document.getElementById('l_sbux'); if(ls) ls.value='';
+  buildLiveColors(); renderLedger(v); refreshMatCalc(); recalcClose(true); render(); renderAll();
+}
+function delSale(sid){
+  if(!curId) return; const v=DATA[curId]; const k=matKey(v);
+  const list=ledgerAt(k,v.dateKey);
+  const i=list.findIndex(e=>e.id===sid); if(i<0) return;
+  if(!confirm('이 판매 기록을 지울까요?')) return;
+  list.splice(i,1); persistLedger();
+  renderLedger(v); refreshMatCalc(); recalcClose(true); render(); renderAll();
+}
+function renderLedger(v){
+  const box=document.getElementById('ledgerList'); if(!box) return;
+  const list=ledgerAt(matKey(v), v.dateKey);
+  const cnt=document.getElementById('ledgerCount');
+  const tot=list.reduce((a,e)=>a+Object.values(e.qty||{}).reduce((x,y)=>x+toInt(y),0),0);
+  if(cnt) cnt.textContent=list.length?(list.length+'건 · '+tot+'대'):'';
+  if(!list.length){ box.innerHTML='<div class="led-empty">아직 판매 기록이 없어요.</div>'; return; }
+  box.innerHTML=list.map(e=>{
+    const names=Object.entries(e.qty||{}).map(([cid,n])=>{
+      const c=COLORS.find(x=>x.id===cid); const nm=c?c.live:cid;
+      return toInt(n)>1?(nm+' '+n):nm;
+    }).join(', ');
+    const t=new Date(e.at); const hh=String(t.getHours()).padStart(2,'0'), mm=String(t.getMinutes()).padStart(2,'0');
+    const sub=[e.route, e.sbux?('스벅 '+e.sbux):''].filter(Boolean).join(' · ');
+    return '<div class="led"><span class="t">'+hh+':'+mm+'</span><div><div class="c">'+esc(names)+'</div>'
+      +(sub?'<div class="s">'+esc(sub)+'</div>':'')+'</div>'
+      +'<button class="x" onclick="delSale(\''+e.id+'\')">✕</button></div>';
+  }).join('');
+}
+
+/* ═══════════ 물자 ═══════════ */
+function findMat(v){
+  const k=matKey(v), byDate=MAT[k]||{};
+  if(byDate[v.dateKey]) return { data:byDate[v.dateKey], inherited:false, from:v.dateKey };
+  const prev=Object.keys(byDate).filter(d=>dateVal(d)<dateVal(v.dateKey)).sort((a,b)=>dateVal(b)-dateVal(a))[0];
+  if(!prev) return null;
+  const p=byDate[prev], sold=soldAt(k,prev);
+  const qty={};
+  COLORS.forEach(c=>{ qty[c.id]=Math.max(0, toInt(p.qty&&p.qty[c.id]) - toInt(sold[c.id])); });
+  const sbux=Math.max(0, toInt(p.sbux) - toInt(sold.sbux));
+  return { data:{ m_box:p.m_box, m_serial:p.m_serial, sbux, qty }, inherited:true, from:prev };
+}
+function buildMatRows(){
+  const box=document.getElementById('matRows'); if(!box) return;
+  box.innerHTML=COLORS.map(c=>
+    '<div class="mat-row"><span class="nm">'+esc(c.mat)+'</span>'
+    +'<input type="text" inputmode="numeric" id="mq_'+c.id+'" placeholder="0" oninput="refreshMatCalc(); render()">'
+    +'<span class="sold" id="msold_'+c.id+'">−0</span>'
+    +'<span class="left" id="mleft_'+c.id+'">0</span></div>'
+  ).join('');
+}
+function refreshMatCalc(){
+  if(!curId||!DATA[curId]) return;
+  const v=DATA[curId], sold=soldAt(matKey(v), v.dateKey);
+  COLORS.forEach(c=>{
+    const s=toInt(sold[c.id]), have=n0('mq_'+c.id), left=have-s;
+    const se=document.getElementById('msold_'+c.id);
+    if(se){ se.textContent='−'+s; se.className='sold'+(s?'':' zero'); }
+    const le=document.getElementById('mleft_'+c.id);
+    if(le){ le.textContent=left; le.className='left'+(left<0?' neg':''); }
+  });
+  const ss=toInt(sold.sbux), sh=n0('m_sbux'), sl=sh-ss;
+  const sse=document.getElementById('msold_sbux'); if(sse){ sse.textContent='−'+ss; sse.className='sold'+(ss?'':' zero'); }
+  const sle=document.getElementById('mleft_sbux'); if(sle){ sle.textContent=sl; sle.className='left'+(sl<0?' neg':''); }
+}
+function applyMat(v){
+  const found=findMat(v);
+  const note=document.getElementById('matNote');
+  if(found){
+    const d=found.data;
+    const mb=document.getElementById('m_box'); if(mb) mb.value=d.m_box||'';
+    const ms=document.getElementById('m_serial'); if(ms) ms.value=d.m_serial||'';
+    const sb=document.getElementById('m_sbux'); if(sb) sb.value=(d.sbux!=null&&d.sbux!=='')?d.sbux:'';
+    COLORS.forEach(c=>{ const e=document.getElementById('mq_'+c.id); if(e) e.value=(d.qty&&d.qty[c.id]!=null)?d.qty[c.id]:''; });
+    if(note){
+      note.className='mat-note '+(found.inherited?'inherit':'own');
+      note.textContent=found.inherited
+        ? found.from+' 잔여를 이어받았어요 · 저장하면 '+v.dateKey+' 물자로 확정됩니다'
+        : v.dateKey+' 물자 (이 날 저장된 값)';
+    }
+  } else {
+    const mb=document.getElementById('m_box'); if(mb) mb.value='';
+    const ms=document.getElementById('m_serial'); if(ms) ms.value='';
+    const sb=document.getElementById('m_sbux'); if(sb) sb.value='';
+    COLORS.forEach(c=>{ const e=document.getElementById('mq_'+c.id); if(e) e.value=''; });
+    if(note){ note.className='mat-note new'; note.textContent=v.dateKey+' 첫 물자 입력 · 저장하면 다음 날로 이어집니다'; }
+  }
+  const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
+  const mb2=document.getElementById('m_box'); if(mb2&&!mb2.value&&bs) mb2.value=bs;
+  const ms2=document.getElementById('m_serial'); if(ms2&&!ms2.value&&sr) ms2.value=sr;
+  refreshMatCalc();
+}
+function saveMatFor(v){
+  const k=matKey(v); MAT[k]=MAT[k]||{};
+  const qty={}; COLORS.forEach(c=>{ qty[c.id]=n0('mq_'+c.id); });
+  MAT[k][v.dateKey]={ m_box:gv('m_box'), m_serial:gv('m_serial'), sbux:n0('m_sbux'), qty, savedAt:Date.now() };
+  persistMat();
+}
+
+/* ═══════════ 마감 ═══════════ */
+function buildCloseRows(){
+  const box=document.getElementById('closeRows'); if(!box) return;
+  box.innerHTML=COLORS.map(c=>
+    '<div class="qty-row"><span class="nm">'+esc(c.close)+'</span>'
+    +'<input type="text" inputmode="numeric" id="cs_'+c.id+'" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()">'
+    +'<span class="slash">/</span>'
+    +'<input type="text" inputmode="numeric" id="cr_'+c.id+'" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()">'
+    +'</div>'
+  ).join('');
+}
+function markCloseNote(){
+  const n=document.getElementById('closeNote'); if(!n) return;
+  if(closeAuto){ n.className='mat-note own'; n.textContent='실시간 판매 누적에서 자동 계산됨 · 직접 고치면 수동으로 바뀝니다'; }
+  else { n.className='mat-note inherit'; n.textContent='직접 입력한 값 · 「물자에서 다시 계산」을 누르면 자동으로 돌아갑니다'; }
+}
+function recalcClose(keepManual){
+  if(!curId||!DATA[curId]) return;
+  if(keepManual && !closeAuto){ return; }   // 사용자가 직접 고쳤으면 건드리지 않음
+  closeAuto=true;
+  const v=DATA[curId], sold=soldAt(matKey(v), v.dateKey);
+  COLORS.forEach(c=>{
+    const s=toInt(sold[c.id]), have=n0('mq_'+c.id);
+    const se=document.getElementById('cs_'+c.id); if(se) se.value=s;
+    const re=document.getElementById('cr_'+c.id); if(re) re.value=Math.max(0,have-s);
+  });
+  const ss=toInt(sold.sbux), sh=n0('m_sbux');
+  const a=document.getElementById('c_sbux_s'); if(a) a.value=ss;
+  const b=document.getElementById('c_sbux_r'); if(b) b.value=Math.max(0,sh-ss);
+  markCloseNote(); render();
+}
+
+/* ═══════════ 엑셀 / CSV ═══════════ */
 const BRANDS=['GS 25','GS25','CU','세븐일레븐','이마트24','이마트 24','미니스톱','씨유'];
 function normBrand(b){ return (b||'').replace(/\s+/g,''); }
 function serialToDate(serial){ return new Date(Math.round((serial-25569)*86400000)); }
 function normDate(raw){ if(!raw) return ''; const m=raw.match(/(\d{1,2})\D+(\d{1,2})/); return m?m[1]+'.'+m[2]:raw; }
 function setImportMode(m){ importMode=m; document.getElementById('impNew').classList.toggle('on',m==='replace'); document.getElementById('impAdd').classList.toggle('on',m==='merge'); }
-
 function parseCSV(text){
   const rows=[]; const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim()!=='');
   for(const line of lines){ const cells=[]; let cur='',q=false;
@@ -458,20 +688,19 @@ function parseCSV(text){
   return rows;
 }
 function col(header, names){ for(const n of names){ const i=header.indexOf(n); if(i>=0) return i; } return -1; }
-
-const DEMO=`차수,구분,날짜,매장명,상태,신규/기존,요일,재고,점주,주소,지역,코드,팀,편의점
-6,점포,7월 13,노량메가점,,,월요일,,No,서울 동작구 노량진로 140 1층,,,3팀,GS25
-6,점포,7월 13,구로대륭점,,,월요일,,No,서울 구로구 디지털로34길 27,,,14팀,세븐일레븐
-6,흡연구역,7월 13,금천하이시티점,,,월요일,,No,서울 금천구 가산디지털1로 131,,,15팀,CU`;
+const DEMO=`차수,구분,날짜,매장명,요일,주소,팀,편의점,코드
+6,점포,7월 15,노량메가점,수요일,서울 동작구 노량진로 140 1층,3팀,GS25,KA_05-042885
+6,점포,7월 15,구로대륭점,수요일,서울 구로구 디지털로34길 27,14팀,세븐일레븐,KA_05-042886
+6,흡연구역,7월 16,금천하이시티점,목요일,서울 금천구 가산디지털1로 131,3팀,CU,KA_05-042887`;
 
 function importCSVText(text, silent){
   const rows=parseCSV(text);
-  if(rows.length<2){ if(!silent) msg('<span class="warn">읽을 데이터가 없어요.</span>'); return; }
+  if(rows.length<2){ if(!silent) impMsg('<span class="warn">읽을 데이터가 없어요.</span>'); return; }
   const h=rows[0];
   const ci={ round:col(h,['차수','세일즈 진행 일차']), type:col(h,['구분','점포/흡연구역']), date:col(h,['날짜']),
     store:col(h,['매장명','점포명']), dow:col(h,['요일']), addr:col(h,['주소']),
     team:col(h,['팀']), brand:col(h,['편의점','점포 타입']), code:col(h,['점포코드','코드']) };
-  if(ci.store<0||ci.team<0){ if(!silent) msg('<span class="warn">매장명/팀 열을 못 찾았어요.</span>'); return; }
+  if(ci.store<0||ci.team<0){ if(!silent) impMsg('<span class="warn">매장명/팀 열을 못 찾았어요.</span>'); return; }
   const next=(importMode==='merge')?Object.assign({},DATA):{};
   const groupVal=(document.getElementById('impGroup').value||'').trim();
   let n=0;
@@ -479,8 +708,7 @@ function importCSVText(text, silent){
     const row=rows[r];
     const store=(row[ci.store]||'').trim(); if(!store||store.startsWith('—')) continue;
     const team=(row[ci.team]||'').trim(); if(!team) continue;
-    const dateRaw=(ci.date>=0?row[ci.date]:'').trim();
-    const dk=normDate(dateRaw);
+    const dk=normDate((ci.date>=0?row[ci.date]:'').trim());
     const id='v_'+team+'_'+store+'_'+dk;
     next[id]={ id, team, type:(ci.type>=0?row[ci.type]:'점포').trim()||'점포',
       date:dk, dateKey:dk, store, dow:(ci.dow>=0?row[ci.dow]:'').trim(),
@@ -490,24 +718,24 @@ function importCSVText(text, silent){
     n++;
   }
   DATA=next; save();
-  if(!silent) msg('<span class="ok">'+n+'개 일정을 채웠어요.</span>'); toast(n+'개 일정 채움');
+  if(!silent) impMsg('<span class="ok">'+n+'개 일정을 채웠어요.</span>'); toast(n+'개 일정 채움');
 }
 function importCSV(){ importCSVText(document.getElementById('csvInput').value,false); }
 function loadSample(){ document.getElementById('csvInput').value=DEMO; importCSV(); }
-function msg(html){ document.getElementById('importMsg').innerHTML=html; }
+function impMsg(html){ document.getElementById('importMsg').innerHTML=html; }
 
 function importExcel(ev){
   const file=ev.target.files[0]; if(!file) return;
-  msg('<span style="color:var(--txt-dim)">파일 읽는 중… ('+(file.name||'')+')</span>');
-  if(typeof XLSX==='undefined'){ msg('<span class="warn">엑셀 모듈을 못 불러왔어요. 인터넷 연결 후 새로고침.</span>'); ev.target.value=''; return; }
+  impMsg('<span style="color:var(--txt-dim)">파일 읽는 중… ('+(file.name||'')+')</span>');
+  if(typeof XLSX==='undefined'){ impMsg('<span class="warn">엑셀 모듈을 못 불러왔어요. 인터넷 연결 후 새로고침.</span>'); ev.target.value=''; return; }
   const reader=new FileReader();
-  reader.onerror=()=>msg('<span class="warn">파일을 여는 데 실패했어요.</span>');
+  reader.onerror=()=>impMsg('<span class="warn">파일을 여는 데 실패했어요.</span>');
   reader.onload=e=>{
     try{
       const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
       const sheets=wb.SheetNames.map(name=>({ name, rows:XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,blankrows:false}) }));
       mapExcelRows(sheets);
-    }catch(err){ msg('<span class="warn">엑셀을 못 읽었어요: '+(err&&err.message||err)+'</span>'); }
+    }catch(err){ impMsg('<span class="warn">엑셀을 못 읽었어요: '+(err&&err.message||err)+'</span>'); }
   };
   reader.readAsArrayBuffer(file);
   ev.target.value='';
@@ -548,10 +776,9 @@ function mapExcelRows(sheets){
       }
       continue;
     }
-    // 옛 양식 추정
     for(const row of rows){
       if(!row||row.length<4) continue;
-      let team='',date=null,type='',brand='',store='',addr='',dow='',round='';
+      let team='',date=null,type2='',brand='',store='',addr='',dow='',round='';
       const teamCells=[]; row.forEach((cell,idx)=>{ const s=(cell==null?'':String(cell)).trim(); if(/팀$/.test(s)||/^#/.test(s)) teamCells.push({idx,s}); });
       const atCol2=teamCells.find(t=>t.idx===2);
       if(atCol2) team=atCol2.s; else if(teamCells.length) team=teamCells[teamCells.length-1].s;
@@ -559,7 +786,7 @@ function mapExcelRows(sheets){
         if(cell instanceof Date){ if(!date) date=cell; continue; }
         if(typeof cell==='number'&&cell>40000&&cell<70000){ if(!date) date=serialToDate(cell); continue; }
         const s=(cell==null?'':String(cell)).trim(); if(!s) continue;
-        if(s==='점포'||s==='흡연구역') type=s;
+        if(s==='점포'||s==='흡연구역') type2=s;
         else if(/요일$/.test(s)) dow=s;
         else if(/^\d+일차$/.test(s)){ const m=s.match(/\d+/); round=m?m[0]:''; }
         else if(BRANDS.includes(s)) brand=normBrand(s);
@@ -569,21 +796,22 @@ function mapExcelRows(sheets){
       if(!team||!store||!date) continue;
       const dateKey=(date.getUTCMonth()+1)+'.'+date.getUTCDate();
       const id='v_'+team+'_'+store+'_'+dateKey;
-      next[id]={ id, team, type:type||'점포', date:dateKey, dateKey, store, dow, addr, brand, round, storeCode:'', group:groupVal, report:(DATA[id]&&DATA[id].report)?DATA[id].report:undefined };
+      next[id]={ id, team, type:type2||'점포', date:dateKey, dateKey, store, dow, addr, brand, round, storeCode:'', group:groupVal,
+        report:(DATA[id]&&DATA[id].report)?DATA[id].report:undefined };
       n++;
     }
   }
-  if(n===0){ msg('<span class="warn">매장을 못 찾았어요. 시트/양식이 다를 수 있어요 — 파일 보내주면 맞춰줄게요.</span>'); return; }
+  if(n===0){ impMsg('<span class="warn">매장을 못 찾았어요. 시트/양식이 다를 수 있어요.</span>'); return; }
   DATA=next; save();
   const total=Object.keys(DATA).length;
-  msg('<span class="ok">'+n+'개 매장을 '+(importMode==='merge'?('더했어요 (전체 '+total+'곳)'):'채웠어요')+'.</span>');
+  impMsg('<span class="ok">'+n+'개 매장을 '+(importMode==='merge'?('더했어요 (전체 '+total+'곳)'):'채웠어요')+'.</span>');
   toast((importMode==='merge'?'+':'')+n+'개 일정'); switchView('today');
 }
 function wipeData(){ if(!confirm('입력한 일정을 모두 지울까요?')) return; DATA={}; save(); toast('일정 삭제됨'); }
 
-/* ═══════════ 필터 칩 ═══════════ */
+/* ═══════════ 필터 · 목록 ═══════════ */
 function renderAll(){ renderFilters(); renderStoreList(); renderSchedule(); }
-function chip(label,on,extra,target){ return `<span class="chip ${extra} ${on?'on':''}" onclick="setFilter('${target}','${label}')">${label}</span>`; }
+function chip(label,on,extra,target){ return '<span class="chip '+extra+' '+(on?'on':'')+'" onclick="setFilter(\''+target+'\',\''+label+'\')">'+label+'</span>'; }
 function setFilter(target,val){
   if(target==='filterDate') filterDate=val;
   else if(target==='filterGroup'){ filterGroup=val; filterTeam='전체'; }
@@ -613,17 +841,13 @@ function renderFilters(){
   if(!dates.includes(filterDate)) filterDate=defaultDate(dates);
   const teams=uniq(vs.map(v=>v.team).filter(Boolean)).sort(teamSort);
   const hasPast=uniq(vs.map(v=>v.dateKey)).some(isPast);
-  document.getElementById('dateChips').innerHTML='<span class="lbl">날짜</span>'+
-    dates.map(d=>chip(d,filterDate===d,'date','filterDate')).join('');
+  document.getElementById('dateChips').innerHTML='<span class="lbl">날짜</span>'+dates.map(d=>chip(d,filterDate===d,'date','filterDate')).join('');
   const pb=document.getElementById('pastBtn');
   pb.classList.toggle('hidden',!hasPast); pb.classList.toggle('on',showPast);
   pb.textContent=showPast?'지난날 ✕':'지난날';
   document.getElementById('teamChips').innerHTML='<span class="lbl">팀</span>'+
-    chip('전체',filterTeam==='전체','','filterTeam')+
-    teams.map(t=>chip(t,filterTeam===t,'','filterTeam')).join('');
+    chip('전체',filterTeam==='전체','','filterTeam')+teams.map(t=>chip(t,filterTeam===t,'','filterTeam')).join('');
 }
-
-/* ═══════════ 카드 목록 ═══════════ */
 function renderStoreList(){
   const el=document.getElementById('storeList');
   const today=todayKey();
@@ -639,110 +863,59 @@ function renderStoreList(){
   order.forEach(dk=>{
     const list=groups[dk].sort((a,b)=>teamSort(a.team,b.team));
     const dow=list[0].dow||'';
-    let title=(dk===today?'오늘 — ':'')+`${dk} ${dow}`;
-    html+=`<div class="daygroup-title">${title}</div>`;
+    html+='<div class="daygroup-title">'+(dk===today?'오늘 — ':'')+dk+' '+dow+'</div>';
     list.forEach(v=>{ html+=card(v); });
   });
   el.innerHTML=html;
 }
 function card(v){
-  const naver=v.addr?`<a href="https://map.naver.com/p/search/${encodeURIComponent(v.addr)}" target="_blank" onclick="event.stopPropagation()">길찾기 ›</a>`:'';
-  return `<div class="card${v.report?' saved':''}" onclick="openSheet('${v.id}')">
-    <div class="stripe"></div>${v.report?'<span class="saved-pill">저장됨</span>':''}
-    <div class="card-top"><span class="round">${v.round?('#'+v.round):''}</span><span class="name">${esc(v.store)}</span></div>
-    <div class="meta">
-      <span class="tag type">${esc(v.type)}</span>
-      <span class="tag brand">${esc(v.brand)}</span>
-      <span class="tag">${esc(v.team)}</span>
-      ${v.storeCode?`<span class="tag code">${esc(v.storeCode)}</span>`:''}
-      ${v.group?`<span class="tag" style="background:rgba(255,107,92,.14); color:var(--coral);">${esc(v.group)}</span>`:''}
-    </div>
-    ${v.addr?`<div class="addr">${esc(v.addr)} ${naver}</div>`:''}
-  </div>`;
+  const naver=v.addr?'<a href="https://map.naver.com/p/search/'+encodeURIComponent(v.addr)+'" target="_blank" onclick="event.stopPropagation()">길찾기 ›</a>':'';
+  const sold=soldAt(matKey(v), v.dateKey);
+  const tot=COLORS.reduce((a,c)=>a+toInt(sold[c.id]),0);
+  return '<div class="card'+(v.report?' saved':'')+'" onclick="openSheet(\''+v.id+'\')">'
+    +'<div class="stripe"></div>'+(v.report?'<span class="saved-pill">저장됨</span>':'')
+    +'<div class="card-top"><span class="round">'+(v.round?('#'+v.round):'')+'</span><span class="name">'+esc(v.store)+'</span></div>'
+    +'<div class="meta">'
+    +'<span class="tag type">'+esc(v.type)+'</span>'
+    +'<span class="tag brand">'+esc(v.brand)+'</span>'
+    +'<span class="tag">'+esc(v.team)+'</span>'
+    +(v.storeCode?'<span class="tag code">'+esc(v.storeCode)+'</span>':'')
+    +(v.group?'<span class="tag" style="background:rgba(255,107,92,.14); color:var(--coral);">'+esc(v.group)+'</span>':'')
+    +(tot?'<span class="tag" style="background:rgba(56,211,159,.16); color:var(--green);">판매 '+tot+'</span>':'')
+    +'</div>'
+    +(v.addr?'<div class="addr">'+esc(v.addr)+' '+naver+'</div>':'')
+    +'</div>';
 }
 function renderSchedule(){
   document.getElementById('schedCount').textContent=visits().length?('· '+visits().length+'곳'):'';
   const el=document.getElementById('schedList');
-  const vs=visits().sort((a,b)=>{ const pa=(a.dateKey||'').split('.').map(Number),pb=(b.dateKey||'').split('.').map(Number); return (pa[0]-pb[0])||(pa[1]-pb[1])||teamSort(a.team,b.team); });
-  el.innerHTML=vs.map(v=>`<div class="card" onclick="openSheet('${v.id}')" oncontextmenu="delVisit(event,'${v.id}')">
-    <div class="stripe"></div>
-    <div class="card-top"><span class="round">${v.dateKey||''}</span><span class="name" style="font-size:15px;">${esc(v.store)}</span></div>
-    <div class="meta"><span class="tag type">${esc(v.type)}</span><span class="tag">${esc(v.team)}</span><span class="tag brand">${esc(v.brand)}</span>${v.storeCode?`<span class="tag code">${esc(v.storeCode)}</span>`:''}</div>
-  </div>`).join('');
+  const vs=visits().sort((a,b)=>dateVal(a.dateKey)-dateVal(b.dateKey)||teamSort(a.team,b.team));
+  el.innerHTML=vs.map(v=>'<div class="card" onclick="openSheet(\''+v.id+'\')" oncontextmenu="delVisit(event,\''+v.id+'\')">'
+    +'<div class="stripe"></div>'
+    +'<div class="card-top"><span class="round">'+(v.dateKey||'')+'</span><span class="name" style="font-size:15px;">'+esc(v.store)+'</span></div>'
+    +'<div class="meta"><span class="tag type">'+esc(v.type)+'</span><span class="tag">'+esc(v.team)+'</span><span class="tag brand">'+esc(v.brand)+'</span>'
+    +(v.storeCode?'<span class="tag code">'+esc(v.storeCode)+'</span>':'')+'</div></div>').join('');
 }
 function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에서 지울까요?')){ delete DATA[id]; save(); } }
 
 /* ═══════════ 편집 시트 ═══════════ */
-const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand',
-  'l_sbux',
+const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand','l_sbux',
   'mc_from','mc_to','mc_reason','mc_extra','md_store','md_stock','md_nearby','md_feedback','md_extra',
-  'c_date','c_black_s','c_black_r','c_silver_s','c_silver_r','c_rose_s','c_rose_r','c_blue_s','c_blue_r','c_sbux_s','c_sbux_r'];
+  'c_date','c_sbux_s','c_sbux_r'];
 const FLAG_IDS=['md_agree','md_consent'];
+function closeIds(){ const a=[]; COLORS.forEach(c=>{ a.push('cs_'+c.id); a.push('cr_'+c.id); }); return a; }
 
-/* ─── 물자: 팀·날짜별로 따로 보관 (같은 날 같은 팀이면 어느 점포에서 열어도 공유) ───
-   · 그 날 저장된 물자가 있으면 그대로 불러옴 (지난 날은 그때 숫자 그대로 유지)
-   · 없으면 그 팀의 가장 최근 이전 날짜 물자를 이어받음 (다음날 연계)         */
-const MAT_FIELDS=['m_box','m_serial','m_sbux','m_black','m_silver','m_rose','m_navy'];
-let MAT={};
-function loadMat(){ try{ MAT=JSON.parse(localStorage.getItem('ploomSalesMat')||'{}'); }catch(e){ MAT={}; } }
-function persistMat(){ localStorage.setItem('ploomSalesMat', JSON.stringify(MAT)); }
-function matKey(v){ return (v.group||'')+'|'+(v.team||''); }
-function findMat(v){
-  const byDate=MAT[matKey(v)]||{};
-  if(byDate[v.dateKey]) return { data:byDate[v.dateKey], inherited:false, from:v.dateKey };
-  const prev=Object.keys(byDate).filter(d=>dateVal(d)<dateVal(v.dateKey)).sort((a,b)=>dateVal(b)-dateVal(a))[0];
-  if(prev) return { data:byDate[prev], inherited:true, from:prev };
-  return null;
-}
-function applyMat(v){
-  const found=findMat(v);
-  const note=document.getElementById('matNote');
-  if(found){
-    MAT_FIELDS.forEach(k=>{ const e=document.getElementById(k); if(e) e.value=(found.data[k]!=null?found.data[k]:''); });
-    if(note){
-      note.className='mat-note '+(found.inherited?'inherit':'own');
-      note.textContent=found.inherited
-        ? `${found.from} 물자를 이어받았어요 · 저장하면 ${v.dateKey} 물자로 확정됩니다`
-        : `${v.dateKey} 물자 (이 날 저장된 값)`;
-    }
-  } else {
-    MAT_FIELDS.forEach(k=>{ const e=document.getElementById(k); if(e) e.value=''; });
-    const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
-    if(bs){ const mb=document.getElementById('m_box'); if(mb) mb.value=bs; }
-    if(sr){ const ms=document.getElementById('m_serial'); if(ms) ms.value=sr; }
-    if(note){ note.className='mat-note new'; note.textContent=`${v.dateKey} 첫 물자 입력 · 저장하면 다음 날로 이어집니다`; }
-  }
-  // 일련번호가 비어 있으면 설정값으로 보충
-  const bs2=getSerial('ploomSalesBoxSerial'), sr2=getSerial('ploomSalesSerial');
-  const mb2=document.getElementById('m_box'); if(mb2&&!mb2.value&&bs2) mb2.value=bs2;
-  const ms2=document.getElementById('m_serial'); if(ms2&&!ms2.value&&sr2) ms2.value=sr2;
-}
-function saveMatFor(v){
-  const k=matKey(v);
-  MAT[k]=MAT[k]||{};
-  const rec={};
-  MAT_FIELDS.forEach(f=>{ const e=document.getElementById(f); rec[f]=e?e.value:''; });
-  rec.savedAt=Date.now();
-  MAT[k][v.dateKey]=rec;
-  persistMat();
-}
-
-let mcFromTouched=false;
-/* 대상 점포 → 이동 원점포 자동 연동 (원점포를 직접 고치면 연동 중단) */
 function syncFromStore(){
   if(mcFromTouched) return;
-  const src=document.getElementById('s_store');
-  const dst=document.getElementById('mc_from');
+  const src=document.getElementById('s_store'), dst=document.getElementById('mc_from');
   if(src&&dst) dst.value=src.value;
 }
-
 function resetSheet(){
-  FIELD_IDS.concat(MAT_FIELDS).forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  FIELD_IDS.concat(closeIds()).forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   Object.keys(V).forEach(k=>delete V[k]);
   Object.keys(FLAG).forEach(k=>delete FLAG[k]);
   Object.keys(CC).forEach(k=>delete CC[k]);
-  moveMode='confirm';
-  mcFromTouched=false;
+  moveMode='confirm'; mcFromTouched=false; closeAuto=true;
   document.querySelectorAll('#sheet .opt').forEach(o=>o.classList.remove('on','yes','no'));
 }
 function applyPickUI(){
@@ -761,60 +934,65 @@ function tagOptVals(){
     const mk=oc.match(/,\s*'(yes|no)'\)/); if(mk) o.dataset.kind=mk[1];
   });
 }
-
 function openSheet(id){
   curId=id; const v=DATA[id]; if(!v) return;
   document.getElementById('edStore').textContent=v.store||v.team||'보고';
-  document.getElementById('edMeta').innerHTML=`${esc(v.team)} · ${esc(v.brand)} · ${esc(v.type)} · ${v.dateKey||''} ${esc(v.dow||'')}`+(v.storeCode?`<span class="code">${esc(v.storeCode)}</span>`:'');
+  document.getElementById('edMeta').innerHTML=esc(v.team)+' · '+esc(v.brand)+' · '+esc(v.type)+' · '+(v.dateKey||'')+' '+esc(v.dow||'')
+    +(v.storeCode?'<span class="code">'+esc(v.storeCode)+'</span>':'');
   resetSheet();
   const rep=v.report;
   if(rep&&rep.inputs){
     Object.entries(rep.inputs).forEach(([k,val])=>{ const e=document.getElementById(k); if(e) e.value=val; });
-    // 예전에 브랜드 없이 저장된 점포명은 브랜드 붙여 보정
     ['s_store','mc_from'].forEach(k=>{
       const e=document.getElementById(k);
       if(e && e.value.trim()===(v.store||'').trim()) e.value=fullStore(v);
     });
     Object.assign(V, rep.V||{});
     Object.assign(FLAG, rep.FLAG||{});
-    Object.assign(CC, rep.CC||{});
     moveMode=rep.moveMode||'confirm';
     type=rep.type||'am';
-    // 저장된 원점포가 대상 점포와 다르면 = 직접 고친 것 → 연동 중단
+    closeAuto=(rep.closeAuto!==false);
     const sv=(rep.inputs.s_store||''), fv=(rep.inputs.mc_from||'');
-    mcFromTouched = !!(fv && fv!==sv);
+    mcFromTouched=!!(fv && fv!==sv);
   } else {
     const ss=document.getElementById('s_store'); if(ss) ss.value=fullStore(v);
     const mf=document.getElementById('mc_from'); if(mf) mf.value=fullStore(v);
     const cd=document.getElementById('c_date'); if(cd) cd.value=(v.dateKey||todayKey()).replace('.','/');
   }
-  applyMat(v);   // 물자는 팀·날짜 기준 (점포별 저장본보다 우선)
+  applyMat(v);
+  renderLedger(v);
+  recalcClose(true);
   applyPickUI(); applyFlagUI(); buildLiveColors();
-  setMove(moveMode);
-  setType(type);
+  setMove(moveMode); setType(type); markCloseNote();
   document.getElementById('sheetBg').classList.add('open');
   document.getElementById('sheet').classList.add('open');
 }
+function closeSheet(){ document.getElementById('sheetBg').classList.remove('open'); document.getElementById('sheet').classList.remove('open'); curId=null; }
+
+function mainAction(){ if(type==='live') addSale(DATA[curId]); else saveReport(); }
 function saveReport(){
   if(!curId||!DATA[curId]){ toast('먼저 점포를 선택해줘'); return; }
   const v=DATA[curId];
   const inputs={};
-  FIELD_IDS.forEach(id=>{ const e=document.getElementById(id); if(e) inputs[id]=e.value; });
-  DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), CC:Object.assign({},CC), moveMode, type, savedAt:Date.now() };
-  saveMatFor(v);     // 물자는 이 팀·이 날짜 물자로 확정 (다음 날이 이어받음)
+  FIELD_IDS.concat(closeIds()).forEach(id=>{ const e=document.getElementById(id); if(e) inputs[id]=e.value; });
+  DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), moveMode, type, closeAuto, savedAt:Date.now() };
+  saveMatFor(v);
   save();
-  applyMat(v);       // 안내문구 갱신
+  applyMat(v);
   toast('저장됨 ✓');
 }
-function closeSheet(){ document.getElementById('sheetBg').classList.remove('open'); document.getElementById('sheet').classList.remove('open'); curId=null; }
 
 function setType(tp){
   type=tp;
   if(tp==='move') syncFromStore();
+  if(tp==='close') recalcClose(true);
+  if(tp==='material') refreshMatCalc();
   document.querySelectorAll('.type-chip').forEach(c=>c.classList.toggle('on',c.dataset.type===tp));
   document.querySelectorAll('.form').forEach(f=>f.classList.add('none'));
   const map={am:'f-sales',pm:'f-sales',live:'f-live',material:'f-material',move:'f-move',close:'f-close'};
   document.getElementById(map[tp]).classList.remove('none');
+  const mb=document.getElementById('mainBtn');
+  if(mb){ mb.textContent=(tp==='live')?'판매 기록 +':'저장'; mb.className='btn '+((tp==='live')?'btn-green':'btn-primary'); }
   render();
 }
 function setMove(m){
@@ -835,26 +1013,23 @@ function pick(group,val,btn,kind){
 }
 function toggleFlag(id){ FLAG[id]=!FLAG[id]; const el=document.getElementById(id); el.classList.toggle('on',FLAG[id]); el.classList.toggle('yes',FLAG[id]); render(); }
 
-/* ── 실시간 색상 스테퍼 (탭할 때마다 0→1→2→0, 여러 색 중복) ── */
+/* ── 실시간 색상 스테퍼 ── */
 function buildLiveColors(){
   const box=document.getElementById('l_colors'); if(!box) return;
   box.innerHTML='';
   COLORS.forEach(c=>{
-    const n=CC[c]||0;
+    const n=CC[c.id]||0;
     const el=document.createElement('span');
     el.className='opt'+(n===1?' on':n>=2?' on yes':'');
-    el.innerHTML=esc(c)+(n>0?`<span class="cnt">${n}</span>`:'');
-    el.onclick=()=>tapColor(c);
+    el.innerHTML=esc(c.live)+(n>0?'<span class="cnt">'+n+'</span>':'');
+    el.onclick=()=>{ CC[c.id]=((CC[c.id]||0)+1)%3; buildLiveColors(); render(); };
     box.appendChild(el);
   });
-  const tot=COLORS.reduce((a,c)=>a+(CC[c]||0),0);
+  const tot=COLORS.reduce((a,c)=>a+(CC[c.id]||0),0);
   const t=document.getElementById('l_qtyTotal'); if(t) t.textContent=tot;
 }
-function tapColor(c){ CC[c]=((CC[c]||0)+1)%3; buildLiveColors(); render(); }
 
-/* ── 설정: 일련번호 · 색상 목록 ── */
-function saveBoxSerial(v){ localStorage.setItem('ploomSalesBoxSerial', v.trim()); }
-function saveSerial(v){ localStorage.setItem('ploomSalesSerial', v.trim()); }
+/* ── 설정: 색상 편집 ── */
 function renderSettings(){
   const b=document.getElementById('set_box'); if(b) b.value=getSerial('ploomSalesBoxSerial');
   const s=document.getElementById('set_serial'); if(s) s.value=getSerial('ploomSalesSerial');
@@ -862,19 +1037,22 @@ function renderSettings(){
   box.innerHTML='';
   COLORS.forEach((c,i)=>{
     const row=document.createElement('div'); row.className='color-row';
-    const inp=document.createElement('input'); inp.type='text'; inp.value=c;
-    inp.oninput=()=>{ COLORS[i]=inp.value.trim(); saveColors(); buildLiveColors(); };
+    ['live','mat','close'].forEach(f=>{
+      const inp=document.createElement('input'); inp.type='text'; inp.value=c[f]||'';
+      inp.oninput=()=>{ COLORS[i][f]=inp.value.trim(); saveColors(); rebuildColorUI(); };
+      row.appendChild(inp);
+    });
     const del=document.createElement('button'); del.className='mini-del'; del.textContent='✕';
-    del.onclick=()=>{ COLORS.splice(i,1); saveColors(); renderSettings(); buildLiveColors(); };
-    row.appendChild(inp); row.appendChild(del); box.appendChild(row);
+    del.onclick=()=>{ if(!confirm('이 색상을 지울까요? 기존 판매 기록의 해당 색은 표시되지 않습니다.')) return;
+      COLORS.splice(i,1); saveColors(); renderSettings(); rebuildColorUI(); };
+    row.appendChild(del); box.appendChild(row);
   });
 }
-function addColor(){ COLORS.push(''); saveColors(); renderSettings(); buildLiveColors(); }
-
-/* ═══════════ 헬퍼 ═══════════ */
-const gv = id => { const e=document.getElementById(id); return e&&e.value?e.value.trim():''; };
-const n0 = id => { const e=document.getElementById(id); const v=e?e.value.trim():''; return v===''?0:(parseInt(v)||0); };
-const teamName = ()=> (curId&&DATA[curId])?DATA[curId].team:'';
+function addColor(){
+  COLORS.push({ id:'c'+Date.now(), live:'', mat:'', close:'' });
+  saveColors(); renderSettings(); rebuildColorUI();
+}
+function rebuildColorUI(){ buildLiveColors(); buildMatRows(); buildCloseRows(); if(curId&&DATA[curId]){ applyMat(DATA[curId]); recalcClose(true); } }
 
 /* ═══════════ 보고문 ═══════════ */
 function buildText(){
@@ -902,7 +1080,7 @@ function tSales(when){
 }
 function tLive(){
   const parts=[]; let total=0;
-  COLORS.forEach(c=>{ const n=CC[c]||0; if(n>0){ parts.push(n>1?(c+' '+n):c); total+=n; } });
+  COLORS.forEach(c=>{ const n=CC[c.id]||0; if(n>0){ parts.push(n>1?(c.live+' '+n):c.live); total+=n; } });
   const L=[];
   L.push('■ '+teamName()+' 실시간 세일즈 보고'); L.push('');
   L.push('판매 디바이스 색상 : '+parts.join(', '));
@@ -923,10 +1101,7 @@ function tMaterial(){
   L.push('스타벅스 카드 '+n0('m_sbux'));
   L.push('리플렛'); L.push('');
   L.push('판매용 디스플레이');
-  L.push('- 블랙 '+n0('m_black'));
-  L.push('- 실버 '+n0('m_silver'));
-  L.push('- 로즈골드 '+n0('m_rose'));
-  L.push('- 네이비 '+n0('m_navy'));
+  COLORS.forEach(c=>{ L.push('- '+c.mat+' '+n0('mq_'+c.id)); });
   return L.join('\n');
 }
 function tMoveConfirm(){
@@ -956,10 +1131,8 @@ function tClose(){
   const L=[];
   L.push('■ '+teamName()+' '+date+' 마감 보고'); L.push('');
   L.push('판매/잔여수량:');
-  L.push('블랙 - '+n0('c_black_s')+'개/'+n0('c_black_r')+'개');
-  L.push('실버 - '+n0('c_silver_s')+'개/'+n0('c_silver_r')+'개');
-  L.push('로즈 - '+n0('c_rose_s')+'개/'+n0('c_rose_r')+'개');
-  L.push('블루 - '+n0('c_blue_s')+'개/'+n0('c_blue_r')+'개'); L.push('');
+  COLORS.forEach(c=>{ L.push(c.close+' - '+n0('cs_'+c.id)+'개/'+n0('cr_'+c.id)+'개'); });
+  L.push('');
   L.push('스타벅스 카드 소진/잔여 수량: '+n0('c_sbux_s')+'/'+n0('c_sbux_r'));
   return L.join('\n');
 }
@@ -979,8 +1152,6 @@ async function shareOut(){
 }
 let toastT;
 function toast(m){ const el=document.getElementById('toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),2000); }
-
-/* ═══════════ 탭 ═══════════ */
 function switchView(v){
   document.querySelectorAll('.view').forEach(s=>s.classList.remove('on'));
   document.getElementById('view-'+v).classList.add('on');
@@ -989,7 +1160,11 @@ function switchView(v){
 }
 
 /* ═══════════ 시작 ═══════════ */
-window.addEventListener('DOMContentLoaded',()=>{ load(); loadMat(); renderAll(); renderSettings(); buildLiveColors(); tagOptVals(); });
+window.addEventListener('DOMContentLoaded',()=>{
+  load(); loadMat(); loadLedger();
+  buildMatRows(); buildCloseRows(); buildLiveColors();
+  renderAll(); renderSettings(); tagOptVals();
+});
 </script>
 </body>
 </html>
