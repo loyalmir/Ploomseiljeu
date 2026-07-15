@@ -182,6 +182,12 @@
 
   .toast{position:fixed; bottom:96px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--txt); color:var(--ink); padding:11px 20px; border-radius:24px; font-weight:800; font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:99; box-shadow:0 8px 30px rgba(0,0,0,.4);}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .rk-switch{display:inline-block; width:44px; height:25px; border-radius:14px; background:var(--surface-2); border:1px solid var(--line); vertical-align:middle; margin-left:8px; cursor:pointer; position:relative; transition:.16s;}
+  .rk-switch i{position:absolute; top:2px; left:2px; width:19px; height:19px; border-radius:50%; background:var(--txt-faint); transition:.16s;}
+  .rk-switch.on{background:rgba(56,211,159,.25); border-color:var(--green);}
+  .rk-switch.on i{left:21px; background:var(--green);}
+  .rk-ok{font-size:10px; font-weight:800; color:var(--green); background:rgba(56,211,159,.14); padding:1px 6px; border-radius:5px; margin-left:4px;}
+  .rk-no{font-size:10px; font-weight:800; color:var(--amber); background:rgba(255,194,75,.14); padding:1px 6px; border-radius:5px; margin-left:4px;}
   .view{display:none;} .view.on{display:block;}
   .none{display:none;}
 </style>
@@ -217,10 +223,26 @@
     <div class="panel">
       <h3>디바이스 색상</h3>
       <p>색 하나가 보고마다 다르게 불려서, 세 가지 이름을 묶어 둡니다. 실시간에서 팔면 물자에서 그 색이 빠지고 마감에 반영돼요.</p>
-      <div class="col-head"><span>실시간 이름</span><span>물자 이름</span><span>마감 이름</span><span style="flex:0 0 34px;"></span></div>
+      <div class="col-head"><span>실시간</span><span>물자</span><span>마감</span><span>랭킹</span><span style="flex:0 0 34px;"></span></div>
       <div id="colorList"></div>
       <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="addColor()">+ 색상 추가</button>
       <div class="hint">예) 실시간 <b>블루</b> = 물자 <b>네이비</b> = 마감 <b>블루</b> — 같은 줄에 적으면 하나의 디바이스로 계산됩니다.</div>
+    </div>
+    <div class="panel">
+      <h3>세일즈 랭킹 연동 <span class="rk-switch" id="rkSwitch" onclick="toggleRank()"><i></i></span></h3>
+      <p>켜두면 <b>실시간 「판매 기록 +」</b>를 누를 때 <b>PLOOM 세일즈 랭킹</b> 앱에도 판매 대수가 자동 등록됩니다. (카운트만)</p>
+      <div id="rkStatus" class="mat-note new"></div>
+      <div id="rkLogin">
+        <div class="field"><label>이름 <span class="o">(랭킹 앱에 등록된 이름과 똑같이)</span></label><input type="text" id="rk_name" placeholder="예) 김건하"></div>
+        <div class="field"><label>팀</label><input type="text" id="rk_team" placeholder="예) 3팀"></div>
+        <div class="field"><label>PIN 4자리</label><input type="text" inputmode="numeric" class="mono" id="rk_pin" placeholder="0000" maxlength="4"></div>
+        <button class="btn btn-primary btn-block" onclick="rankLogin()">랭킹 연결</button>
+        <div class="hint">랭킹 앱에 없는 이름이면 새로 등록됩니다. 이미 있으면 PIN이 맞아야 연결돼요.</div>
+      </div>
+      <div id="rkOut" class="none">
+        <button class="btn btn-ghost btn-block" onclick="rankLogout()">연결 해제</button>
+        <div class="hint">랭킹 앱에서 <b>직접도</b> 등록하고 있다면 두 번 세어질 수 있어요. 둘 중 하나만 쓰세요.</div>
+      </div>
     </div>
     <div class="panel">
       <h3>판매 기록 초기화</h3>
@@ -467,16 +489,20 @@ const V={}, FLAG={}, CC={};
 
 /* ── 색상: 한 색 = 실시간/물자/마감 세 이름 ── */
 const DEFAULT_COLORS=[
-  {id:'black',  live:'블랙',     mat:'블랙',     close:'블랙'},
-  {id:'silver', live:'실버',     mat:'실버',     close:'실버'},
-  {id:'rose',   live:'로즈골드',  mat:'로즈골드',  close:'로즈'},
-  {id:'navy',   live:'블루',     mat:'네이비',    close:'블루'}
+  {id:'black',  live:'블랙',     mat:'블랙',     close:'블랙', rank:'블랙'},
+  {id:'silver', live:'실버',     mat:'실버',     close:'실버', rank:'실버'},
+  {id:'rose',   live:'로즈골드',  mat:'로즈골드',  close:'로즈', rank:'로즈'},
+  {id:'navy',   live:'블루',     mat:'네이비',    close:'블루', rank:'네이비'}
 ];
 let COLORS=loadColors();
 function loadColors(){
   try{
     const a=JSON.parse(localStorage.getItem('ploomSalesColorsV2')||'null');
-    if(Array.isArray(a)&&a.length&&a[0]&&a[0].id) return a;
+    if(Array.isArray(a)&&a.length&&a[0]&&a[0].id){
+      // 예전 저장본에 rank 라벨이 없으면 기본값으로 보충
+      a.forEach(c=>{ if(!c.rank){ const d=DEFAULT_COLORS.find(x=>x.id===c.id); c.rank=d?d.rank:(c.close||c.live||''); } });
+      return a;
+    }
   }catch(e){}
   return DEFAULT_COLORS.map(c=>Object.assign({},c));
 }
@@ -484,6 +510,116 @@ function saveColors(){ localStorage.setItem('ploomSalesColorsV2', JSON.stringify
 function getSerial(k){ return localStorage.getItem(k)||''; }
 function saveBoxSerial(v){ localStorage.setItem('ploomSalesBoxSerial', v.trim()); }
 function saveSerial(v){ localStorage.setItem('ploomSalesSerial', v.trim()); }
+
+/* ═══════════ 랭킹 앱 연동 (loyalmir.github.io/PloomRanking) ═══════════
+   랭킹 앱과 똑같은 REST 방식으로 같은 DB에 판매를 올림 (카운트만).
+   sales/{YYYY-MM-DD}/{memberId} 에 push → {teamId, name, color, qty, storeId, ts} */
+const RANK_DB='https://ploomranking-default-rtdb.firebaseio.com';
+const RANK_ROOT='ploomRanking';
+function rankPath(p){ return RANK_DB+'/'+RANK_ROOT+'/'+p+'.json'; }
+async function rankGet(p){ const r=await fetch(rankPath(p),{cache:'no-store'}); if(!r.ok) throw new Error('서버 응답 오류 ('+r.status+')'); return await r.json(); }
+async function rankPush(p,val){ const r=await fetch(rankPath(p),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}); if(!r.ok) throw new Error('저장 오류 ('+r.status+')'); return (await r.json()).name; }
+async function rankSet(p,val){ const r=await fetch(rankPath(p),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}); if(!r.ok) throw new Error('저장 오류 ('+r.status+')'); return await r.json(); }
+async function rankRemove(p){ const r=await fetch(rankPath(p),{method:'DELETE'}); return r.ok; }
+
+let RANKME=null, rankOn=false;
+function loadRank(){
+  try{ RANKME=JSON.parse(localStorage.getItem('ploomRankMe')||'null'); }catch(e){ RANKME=null; }
+  rankOn = localStorage.getItem('ploomRankOn')==='1';
+}
+function saveRankMe(){ localStorage.setItem('ploomRankMe', JSON.stringify(RANKME)); }
+/* '7.15' → '2026-07-15' (랭킹 앱 날짜키 형식) */
+function rankDateKey(dk){
+  const p=(dk||'').split('.').map(Number);
+  const y=new Date().getFullYear();
+  if(!p[0]||!p[1]) { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  return y+'-'+String(p[0]).padStart(2,'0')+'-'+String(p[1]).padStart(2,'0');
+}
+function teamNum(t){ const m=String(t||'').match(/\d+/); return m?Number(m[0]):0; }
+
+/* 이 판매를 랭킹에 올림 → [{key,color}] 반환 */
+async function pushRank(v, qty){
+  if(!rankOn || !RANKME) return null;
+  const date=rankDateKey(v.dateKey), ids=[];
+  for(const c of COLORS){
+    const n=toInt(qty[c.id]); if(n<=0) continue;
+    const key=await rankPush('sales/'+date+'/'+RANKME.id, {
+      teamId:RANKME.teamId, name:RANKME.name, color:c.rank, qty:n, storeId:'', ts:Date.now()
+    });
+    ids.push({key, color:c.rank, qty:n});
+  }
+  return ids.length?{date, ids}:null;
+}
+async function removeRank(rec){
+  if(!rec||!RANKME) return;
+  for(const it of (rec.ids||[])){
+    try{ await rankRemove('sales/'+rec.date+'/'+RANKME.id+'/'+it.key); }catch(e){}
+  }
+}
+
+/* 설정 화면: 연동 켜기/끄기 · 이름/팀/PIN 연결 */
+function toggleRank(){
+  rankOn=!rankOn; localStorage.setItem('ploomRankOn', rankOn?'1':'0');
+  renderRankUI();
+  toast(rankOn?'랭킹 연동 켜짐':'랭킹 연동 꺼짐');
+}
+async function rankLogin(){
+  const name=gv('rk_name'), team=gv('rk_team'), pin=gv('rk_pin');
+  const teamId=teamNum(team);
+  if(!name){ toast('이름을 입력해줘'); return; }
+  if(!teamId){ toast('팀을 입력해줘 (예: 3팀)'); return; }
+  const st=document.getElementById('rkStatus');
+  st.className='mat-note new'; st.textContent='랭킹 서버에 연결 중…';
+  try{
+    const members = await rankGet('members') || {};
+    let found=null;
+    Object.entries(members).forEach(([id,m])=>{
+      if(m && String(m.name).trim()===name && Number(m.teamId)===teamId) found={id, m};
+    });
+    if(found){
+      const m=found.m;
+      if(m.pin){
+        if(m.pin!==pin){ st.className='mat-note inherit'; st.textContent='PIN이 달라요. 랭킹 앱에서 쓰던 PIN을 넣어줘.'; return; }
+      } else if(pin){
+        await rankSet('members/'+found.id+'/pin', pin);
+      }
+      RANKME={ id:found.id, name:m.name, teamId:Number(m.teamId) };
+    } else {
+      if(pin && pin.length!==4){ st.className='mat-note inherit'; st.textContent='PIN은 4자리로 넣어줘.'; return; }
+      const id=await rankPush('members', {name, teamId, pin:pin||'', createdAt:Date.now()});
+      RANKME={ id, name, teamId };
+    }
+    saveRankMe();
+    rankOn=true; localStorage.setItem('ploomRankOn','1');
+    renderRankUI(); toast('랭킹 연결됨 ✓');
+  }catch(err){
+    st.className='mat-note inherit';
+    st.textContent='연결 실패: '+(err&&err.message||err)+' · 네트워크 확인 후 다시 시도';
+  }
+}
+function rankLogout(){
+  if(!confirm('랭킹 연결을 해제할까요?')) return;
+  RANKME=null; localStorage.removeItem('ploomRankMe');
+  rankOn=false; localStorage.setItem('ploomRankOn','0');
+  renderRankUI(); toast('연결 해제됨');
+}
+function renderRankUI(){
+  const sw=document.getElementById('rkSwitch');
+  if(sw) sw.classList.toggle('on', rankOn && !!RANKME);
+  const st=document.getElementById('rkStatus'); if(!st) return;
+  const box=document.getElementById('rkLogin'), out=document.getElementById('rkOut');
+  if(RANKME){
+    if(box) box.classList.add('none');
+    if(out) out.classList.remove('none');
+    st.className='mat-note '+(rankOn?'own':'new');
+    st.textContent=RANKME.teamId+'팀 · '+RANKME.name+' 로 연결됨'+(rankOn?' · 판매 기록하면 랭킹에 자동 등록돼요':' · 연동 꺼짐 (등록 안 됨)');
+  } else {
+    if(box) box.classList.remove('none');
+    if(out) out.classList.add('none');
+    st.className='mat-note new';
+    st.textContent='랭킹 앱에서 쓰는 이름·팀·PIN을 넣으면 연결됩니다.';
+  }
+}
 
 /* ═══════════ 헬퍼 ═══════════ */
 function todayKey(){ const d=new Date(); return (d.getMonth()+1)+'.'+d.getDate(); }
@@ -532,13 +668,23 @@ function addSale(v){
   // 이 날 물자가 아직 확정 안 됐으면 지금 값(이어받은 시작수량)으로 확정 → 다음날 연결이 끊기지 않게
   if(!(MAT[k]&&MAT[k][v.dateKey])) saveMatFor(v);
   LEDGER[k]=LEDGER[k]||{}; LEDGER[k][v.dateKey]=LEDGER[k][v.dateKey]||[];
-  LEDGER[k][v.dateKey].push({
+  const entry={
     id:'s'+Date.now(), store:gv('s_store')||fullStore(v), qty,
     route:V.l_route||'', join:V.l_join||'', kakao:V.l_kakao||'', sbux:n0('l_sbux'),
     at:new Date().toISOString()
-  });
+  };
+  LEDGER[k][v.dateKey].push(entry);
   persistLedger();
   toast('판매 기록됨 ✓ 물자에서 차감');
+  // 랭킹 앱에도 카운트 올리기 (연동 켜져 있을 때만)
+  if(rankOn && RANKME){
+    pushRank(v, qty).then(rec=>{
+      if(rec){ entry.rank=rec; persistLedger(); renderLedger(v); toast('랭킹 등록 완료 ✓'); }
+    }).catch(err=>{
+      entry.rankFail=true; persistLedger(); renderLedger(v);
+      toast('랭킹 등록 실패 · 네트워크 확인');
+    });
+  }
   // 다음 판매를 위해 색상만 리셋
   Object.keys(CC).forEach(x=>delete CC[x]);
   const ls=document.getElementById('l_sbux'); if(ls) ls.value='';
@@ -549,7 +695,9 @@ function delSale(sid){
   const list=ledgerAt(k,v.dateKey);
   const i=list.findIndex(e=>e.id===sid); if(i<0) return;
   if(!confirm('이 판매 기록을 지울까요?')) return;
+  const gone=list[i];
   list.splice(i,1); persistLedger();
+  if(gone && gone.rank) removeRank(gone.rank).catch(()=>{});   // 랭킹에서도 같이 삭제
   renderLedger(v); refreshMatCalc(); recalcClose(true); render(); renderAll();
 }
 function renderLedger(v){
@@ -565,8 +713,9 @@ function renderLedger(v){
       return toInt(n)>1?(nm+' '+n):nm;
     }).join(', ');
     const t=new Date(e.at); const hh=String(t.getHours()).padStart(2,'0'), mm=String(t.getMinutes()).padStart(2,'0');
+    const badge = e.rank ? '<span class="rk-ok">랭킹 ✓</span>' : (e.rankFail ? '<span class="rk-no">랭킹 실패</span>' : '');
     const sub=[e.route, e.sbux?('스벅 '+e.sbux):''].filter(Boolean).join(' · ');
-    return '<div class="led"><span class="t">'+hh+':'+mm+'</span><div><div class="c">'+esc(names)+'</div>'
+    return '<div class="led"><span class="t">'+hh+':'+mm+'</span><div><div class="c">'+esc(names)+' '+badge+'</div>'
       +(sub?'<div class="s">'+esc(sub)+'</div>':'')+'</div>'
       +'<button class="x" onclick="delSale(\''+e.id+'\')">✕</button></div>';
   }).join('');
@@ -1037,7 +1186,7 @@ function renderSettings(){
   box.innerHTML='';
   COLORS.forEach((c,i)=>{
     const row=document.createElement('div'); row.className='color-row';
-    ['live','mat','close'].forEach(f=>{
+    ['live','mat','close','rank'].forEach(f=>{
       const inp=document.createElement('input'); inp.type='text'; inp.value=c[f]||'';
       inp.oninput=()=>{ COLORS[i][f]=inp.value.trim(); saveColors(); rebuildColorUI(); };
       row.appendChild(inp);
@@ -1161,9 +1310,11 @@ function switchView(v){
 
 /* ═══════════ 시작 ═══════════ */
 window.addEventListener('DOMContentLoaded',()=>{
-  load(); loadMat(); loadLedger();
+  load(); loadMat(); loadLedger(); loadRank();
   buildMatRows(); buildCloseRows(); buildLiveColors();
-  renderAll(); renderSettings(); tagOptVals();
+  renderAll(); renderSettings(); renderRankUI(); tagOptVals();
+  const n=document.getElementById('rk_name'); if(n&&RANKME) n.value=RANKME.name||'';
+  const t=document.getElementById('rk_team'); if(t&&RANKME) t.value=(RANKME.teamId||'')+'팀';
 });
 </script>
 </body>
