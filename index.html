@@ -401,6 +401,7 @@
           <span class="left" id="mleft_sbux">0</span>
         </div>
       </div>
+      <button class="btn btn-ghost btn-block none" id="matClear" onclick="clearMatDay()">이 날 물자 지우기 · 전날 잔여 다시 받기</button>
     </div>
 
     <!-- 05 이동 -->
@@ -769,25 +770,46 @@ function applyMat(v){
       note.className='mat-note '+(found.inherited?'inherit':'own');
       note.textContent=found.inherited
         ? found.from+' 잔여를 이어받았어요 · 저장하면 '+v.dateKey+' 물자로 확정됩니다'
-        : v.dateKey+' 물자 (이 날 저장된 값)';
+        : v.dateKey+' 물자 (이 날 저장된 값) · 전날 걸 다시 받으려면 아래 「이 날 물자 지우기」';
     }
   } else {
     const mb=document.getElementById('m_box'); if(mb) mb.value='';
     const ms=document.getElementById('m_serial'); if(ms) ms.value='';
     const sb=document.getElementById('m_sbux'); if(sb) sb.value='';
     COLORS.forEach(c=>{ const e=document.getElementById('mq_'+c.id); if(e) e.value=''; });
-    if(note){ note.className='mat-note new'; note.textContent=v.dateKey+' 첫 물자 입력 · 저장하면 다음 날로 이어집니다'; }
+    if(note){ note.className='mat-note new'; note.textContent=teamName()+' 이전 물자 기록이 없어요 · 여기 채워 저장하면 다음 날로 이어집니다'; }
   }
+  const clr=document.getElementById('matClear');
+  if(clr) clr.classList.toggle('none', !(found && !found.inherited));
   const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
   const mb2=document.getElementById('m_box'); if(mb2&&!mb2.value&&bs) mb2.value=bs;
   const ms2=document.getElementById('m_serial'); if(ms2&&!ms2.value&&sr) ms2.value=sr;
   refreshMatCalc();
 }
+/* 물자 칸에 실제로 뭔가 들어있는지 (일련번호는 설정에서 자동으로 채워지므로 제외) */
+function matHasContent(){
+  if(gv('m_sbux')!=='') return true;
+  for(const c of COLORS){ if(gv('mq_'+c.id)!=='') return true; }
+  return false;
+}
 function saveMatFor(v){
+  // 물자가 비어 있으면 이 날 기록을 만들지 않음 → 전날 잔여 이월이 끊기지 않게
+  if(!matHasContent()) return false;
   const k=matKey(v); MAT[k]=MAT[k]||{};
   const qty={}; COLORS.forEach(c=>{ qty[c.id]=n0('mq_'+c.id); });
   MAT[k][v.dateKey]={ m_box:gv('m_box'), m_serial:gv('m_serial'), sbux:n0('m_sbux'), qty, savedAt:Date.now() };
   persistMat();
+  return true;
+}
+/* 이 날 물자 기록만 삭제 → 전날 잔여를 다시 이어받음 */
+function clearMatDay(){
+  if(!curId||!DATA[curId]) return;
+  const v=DATA[curId], k=matKey(v);
+  if(!(MAT[k]&&MAT[k][v.dateKey])){ toast('이 날 저장된 물자가 없어'); return; }
+  if(!confirm(v.dateKey+' 물자 기록을 지울까요?\n전날 잔여를 다시 이어받습니다.')) return;
+  delete MAT[k][v.dateKey]; persistMat();
+  applyMat(v); recalcClose(true); render();
+  toast('삭제됨 · 전날에서 다시 이어받음');
 }
 
 /* ═══════════ 마감 ═══════════ */
