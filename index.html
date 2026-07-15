@@ -150,6 +150,10 @@
   .color-row{display:flex; gap:8px; margin-bottom:8px; align-items:center;}
   .color-row input{flex:1;}
   .mini-del{flex-shrink:0; width:36px; height:36px; border-radius:9px; background:var(--surface-2); border:1px solid var(--line); color:var(--txt-faint); font-size:15px; cursor:pointer; line-height:1;}
+  .mat-note{font-size:12px; font-weight:700; padding:10px 12px; border-radius:var(--r-sm); margin-bottom:14px; line-height:1.5;}
+  .mat-note.inherit{background:rgba(255,194,75,.12); color:var(--amber); border:1px solid rgba(255,194,75,.25);}
+  .mat-note.own{background:rgba(56,211,159,.12); color:var(--green); border:1px solid rgba(56,211,159,.25);}
+  .mat-note.new{background:var(--surface); color:var(--txt-dim); border:1px solid var(--line);}
   .view{display:none;} .view.on{display:block;}
   .none{display:none;}
 </style>
@@ -318,6 +322,7 @@
 
     <!-- 04 물자 -->
     <div class="form none" id="f-material">
+      <div id="matNote" class="mat-note"></div>
       <div class="grp"><div class="grp-t">단말기</div>
         <div class="field"><label>단말기 박스 일련번호</label><input type="text" class="mono" id="m_box" placeholder="예) ZC26030031" oninput="render()"></div>
         <div class="field"><label>단말기 일련번호</label><input type="text" class="mono" id="m_serial" placeholder="예) 101209" oninput="render()"></div>
@@ -669,10 +674,58 @@ function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에
 
 /* ═══════════ 편집 시트 ═══════════ */
 const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand',
-  'l_sbux','m_box','m_serial','m_sbux','m_black','m_silver','m_rose','m_navy',
+  'l_sbux',
   'mc_from','mc_to','mc_reason','mc_extra','md_store','md_stock','md_nearby','md_feedback','md_extra',
   'c_date','c_black_s','c_black_r','c_silver_s','c_silver_r','c_rose_s','c_rose_r','c_blue_s','c_blue_r','c_sbux_s','c_sbux_r'];
 const FLAG_IDS=['md_agree','md_consent'];
+
+/* ─── 물자: 팀·날짜별로 따로 보관 (같은 날 같은 팀이면 어느 점포에서 열어도 공유) ───
+   · 그 날 저장된 물자가 있으면 그대로 불러옴 (지난 날은 그때 숫자 그대로 유지)
+   · 없으면 그 팀의 가장 최근 이전 날짜 물자를 이어받음 (다음날 연계)         */
+const MAT_FIELDS=['m_box','m_serial','m_sbux','m_black','m_silver','m_rose','m_navy'];
+let MAT={};
+function loadMat(){ try{ MAT=JSON.parse(localStorage.getItem('ploomSalesMat')||'{}'); }catch(e){ MAT={}; } }
+function persistMat(){ localStorage.setItem('ploomSalesMat', JSON.stringify(MAT)); }
+function matKey(v){ return (v.group||'')+'|'+(v.team||''); }
+function findMat(v){
+  const byDate=MAT[matKey(v)]||{};
+  if(byDate[v.dateKey]) return { data:byDate[v.dateKey], inherited:false, from:v.dateKey };
+  const prev=Object.keys(byDate).filter(d=>dateVal(d)<dateVal(v.dateKey)).sort((a,b)=>dateVal(b)-dateVal(a))[0];
+  if(prev) return { data:byDate[prev], inherited:true, from:prev };
+  return null;
+}
+function applyMat(v){
+  const found=findMat(v);
+  const note=document.getElementById('matNote');
+  if(found){
+    MAT_FIELDS.forEach(k=>{ const e=document.getElementById(k); if(e) e.value=(found.data[k]!=null?found.data[k]:''); });
+    if(note){
+      note.className='mat-note '+(found.inherited?'inherit':'own');
+      note.textContent=found.inherited
+        ? `${found.from} 물자를 이어받았어요 · 저장하면 ${v.dateKey} 물자로 확정됩니다`
+        : `${v.dateKey} 물자 (이 날 저장된 값)`;
+    }
+  } else {
+    MAT_FIELDS.forEach(k=>{ const e=document.getElementById(k); if(e) e.value=''; });
+    const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
+    if(bs){ const mb=document.getElementById('m_box'); if(mb) mb.value=bs; }
+    if(sr){ const ms=document.getElementById('m_serial'); if(ms) ms.value=sr; }
+    if(note){ note.className='mat-note new'; note.textContent=`${v.dateKey} 첫 물자 입력 · 저장하면 다음 날로 이어집니다`; }
+  }
+  // 일련번호가 비어 있으면 설정값으로 보충
+  const bs2=getSerial('ploomSalesBoxSerial'), sr2=getSerial('ploomSalesSerial');
+  const mb2=document.getElementById('m_box'); if(mb2&&!mb2.value&&bs2) mb2.value=bs2;
+  const ms2=document.getElementById('m_serial'); if(ms2&&!ms2.value&&sr2) ms2.value=sr2;
+}
+function saveMatFor(v){
+  const k=matKey(v);
+  MAT[k]=MAT[k]||{};
+  const rec={};
+  MAT_FIELDS.forEach(f=>{ const e=document.getElementById(f); rec[f]=e?e.value:''; });
+  rec.savedAt=Date.now();
+  MAT[k][v.dateKey]=rec;
+  persistMat();
+}
 
 let mcFromTouched=false;
 /* 대상 점포 → 이동 원점포 자동 연동 (원점포를 직접 고치면 연동 중단) */
@@ -684,7 +737,7 @@ function syncFromStore(){
 }
 
 function resetSheet(){
-  FIELD_IDS.forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  FIELD_IDS.concat(MAT_FIELDS).forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   Object.keys(V).forEach(k=>delete V[k]);
   Object.keys(FLAG).forEach(k=>delete FLAG[k]);
   Object.keys(CC).forEach(k=>delete CC[k]);
@@ -734,10 +787,8 @@ function openSheet(id){
     const ss=document.getElementById('s_store'); if(ss) ss.value=fullStore(v);
     const mf=document.getElementById('mc_from'); if(mf) mf.value=fullStore(v);
     const cd=document.getElementById('c_date'); if(cd) cd.value=(v.dateKey||todayKey()).replace('.','/');
-    const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
-    if(bs){ const mb=document.getElementById('m_box'); if(mb) mb.value=bs; }
-    if(sr){ const ms=document.getElementById('m_serial'); if(ms) ms.value=sr; }
   }
+  applyMat(v);   // 물자는 팀·날짜 기준 (점포별 저장본보다 우선)
   applyPickUI(); applyFlagUI(); buildLiveColors();
   setMove(moveMode);
   setType(type);
@@ -746,10 +797,13 @@ function openSheet(id){
 }
 function saveReport(){
   if(!curId||!DATA[curId]){ toast('먼저 점포를 선택해줘'); return; }
+  const v=DATA[curId];
   const inputs={};
   FIELD_IDS.forEach(id=>{ const e=document.getElementById(id); if(e) inputs[id]=e.value; });
   DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), CC:Object.assign({},CC), moveMode, type, savedAt:Date.now() };
+  saveMatFor(v);     // 물자는 이 팀·이 날짜 물자로 확정 (다음 날이 이어받음)
   save();
+  applyMat(v);       // 안내문구 갱신
   toast('저장됨 ✓');
 }
 function closeSheet(){ document.getElementById('sheetBg').classList.remove('open'); document.getElementById('sheet').classList.remove('open'); curId=null; }
@@ -935,7 +989,7 @@ function switchView(v){
 }
 
 /* ═══════════ 시작 ═══════════ */
-window.addEventListener('DOMContentLoaded',()=>{ load(); renderAll(); renderSettings(); buildLiveColors(); tagOptVals(); });
+window.addEventListener('DOMContentLoaded',()=>{ load(); loadMat(); renderAll(); renderSettings(); buildLiveColors(); tagOptVals(); });
 </script>
 </body>
 </html>
