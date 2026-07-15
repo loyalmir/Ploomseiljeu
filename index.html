@@ -392,10 +392,10 @@
 <nav>
   <button class="on" data-view="today" onclick="switchView('today')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>보고</button>
-  <button data-view="schedule" onclick="switchView('schedule')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>일정</button>
   <button data-view="settings" onclick="switchView('settings')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>설정</button>
+  <button data-view="schedule" onclick="switchView('schedule')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>일정</button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -423,6 +423,14 @@ function isPast(k){ return dateVal(k) < dateVal(todayKey()); }
 function uniq(arr){ return [...new Set(arr)]; }
 function visits(){ return Object.values(DATA); }
 function esc(s){ return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+/* 대상 점포 표기: 브랜드 + 점포명 (예: 이마트24 가산모비우스점) */
+function fullStore(v){
+  const b=(v&&v.brand||'').trim(), s=(v&&v.store||'').trim();
+  if(!b) return s;
+  if(!s) return b;
+  if(s.replace(/\s/g,'').toUpperCase().startsWith(b.replace(/\s/g,'').toUpperCase())) return s;
+  return b+' '+s;
+}
 function teamSort(a,b){ const rank=t=>/^[A-Za-z]/.test(t)?0:1; const ra=rank(a),rb=rank(b); return ra!==rb?ra-rb:a.localeCompare(b,'ko',{numeric:true}); }
 
 /* ═══════════ 저장 ═══════════ */
@@ -709,6 +717,11 @@ function openSheet(id){
   const rep=v.report;
   if(rep&&rep.inputs){
     Object.entries(rep.inputs).forEach(([k,val])=>{ const e=document.getElementById(k); if(e) e.value=val; });
+    // 예전에 브랜드 없이 저장된 점포명은 브랜드 붙여 보정
+    ['s_store','mc_from'].forEach(k=>{
+      const e=document.getElementById(k);
+      if(e && e.value.trim()===(v.store||'').trim()) e.value=fullStore(v);
+    });
     Object.assign(V, rep.V||{});
     Object.assign(FLAG, rep.FLAG||{});
     Object.assign(CC, rep.CC||{});
@@ -718,8 +731,8 @@ function openSheet(id){
     const sv=(rep.inputs.s_store||''), fv=(rep.inputs.mc_from||'');
     mcFromTouched = !!(fv && fv!==sv);
   } else {
-    const ss=document.getElementById('s_store'); if(ss) ss.value=v.store||'';
-    const mf=document.getElementById('mc_from'); if(mf) mf.value=v.store||'';
+    const ss=document.getElementById('s_store'); if(ss) ss.value=fullStore(v);
+    const mf=document.getElementById('mc_from'); if(mf) mf.value=fullStore(v);
     const cd=document.getElementById('c_date'); if(cd) cd.value=(v.dateKey||todayKey()).replace('.','/');
     const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
     if(bs){ const mb=document.getElementById('m_box'); if(mb) mb.value=bs; }
