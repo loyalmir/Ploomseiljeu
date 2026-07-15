@@ -247,7 +247,7 @@
 
     <!-- 01·02 오전/오후 -->
     <div class="form none" id="f-sales">
-      <div class="field"><label>대상 점포</label><input type="text" id="s_store" placeholder="점포명" oninput="render()"></div>
+      <div class="field"><label>대상 점포</label><input type="text" id="s_store" placeholder="점포명" oninput="syncFromStore(); render()"></div>
       <div class="field">
         <label>진행 안내</label>
         <div class="opts" data-group="s_guide">
@@ -340,7 +340,7 @@
         <button id="mvDone" onclick="setMove('done')">완료 보고</button>
       </div>
       <div id="mv-confirm">
-        <div class="field"><label>원점포</label><input type="text" id="mc_from" placeholder="예) cu 인천간석역점" oninput="render()"></div>
+        <div class="field"><label>원점포 <span class="o">(대상 점포 자동 연동)</span></label><input type="text" id="mc_from" placeholder="예) cu 인천간석역점" oninput="mcFromTouched=true; render()"></div>
         <div class="field"><label>이동점포</label><input type="text" id="mc_to" placeholder="예) cu 주안대로점" oninput="render()"></div>
         <div class="field"><label>사유</label><textarea id="mc_reason" placeholder="예) 유동인구 겹침으로 인해 요청드립니다." oninput="render()"></textarea></div>
         <div class="field"><label>추가 문구 <span class="o">(선택 · 예: 점포 인사완료)</span></label><textarea id="mc_extra" placeholder="없으면 비워두세요." oninput="render()"></textarea></div>
@@ -666,12 +666,22 @@ const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand'
   'c_date','c_black_s','c_black_r','c_silver_s','c_silver_r','c_rose_s','c_rose_r','c_blue_s','c_blue_r','c_sbux_s','c_sbux_r'];
 const FLAG_IDS=['md_agree','md_consent'];
 
+let mcFromTouched=false;
+/* 대상 점포 → 이동 원점포 자동 연동 (원점포를 직접 고치면 연동 중단) */
+function syncFromStore(){
+  if(mcFromTouched) return;
+  const src=document.getElementById('s_store');
+  const dst=document.getElementById('mc_from');
+  if(src&&dst) dst.value=src.value;
+}
+
 function resetSheet(){
   FIELD_IDS.forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   Object.keys(V).forEach(k=>delete V[k]);
   Object.keys(FLAG).forEach(k=>delete FLAG[k]);
   Object.keys(CC).forEach(k=>delete CC[k]);
   moveMode='confirm';
+  mcFromTouched=false;
   document.querySelectorAll('#sheet .opt').forEach(o=>o.classList.remove('on','yes','no'));
 }
 function applyPickUI(){
@@ -704,8 +714,12 @@ function openSheet(id){
     Object.assign(CC, rep.CC||{});
     moveMode=rep.moveMode||'confirm';
     type=rep.type||'am';
+    // 저장된 원점포가 대상 점포와 다르면 = 직접 고친 것 → 연동 중단
+    const sv=(rep.inputs.s_store||''), fv=(rep.inputs.mc_from||'');
+    mcFromTouched = !!(fv && fv!==sv);
   } else {
     const ss=document.getElementById('s_store'); if(ss) ss.value=v.store||'';
+    const mf=document.getElementById('mc_from'); if(mf) mf.value=v.store||'';
     const cd=document.getElementById('c_date'); if(cd) cd.value=(v.dateKey||todayKey()).replace('.','/');
     const bs=getSerial('ploomSalesBoxSerial'), sr=getSerial('ploomSalesSerial');
     if(bs){ const mb=document.getElementById('m_box'); if(mb) mb.value=bs; }
@@ -729,6 +743,7 @@ function closeSheet(){ document.getElementById('sheetBg').classList.remove('open
 
 function setType(tp){
   type=tp;
+  if(tp==='move') syncFromStore();
   document.querySelectorAll('.type-chip').forEach(c=>c.classList.toggle('on',c.dataset.type===tp));
   document.querySelectorAll('.form').forEach(f=>f.classList.add('none'));
   const map={am:'f-sales',pm:'f-sales',live:'f-live',material:'f-material',move:'f-move',close:'f-close'};
