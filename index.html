@@ -245,6 +245,12 @@
       </div>
     </div>
     <div class="panel">
+      <h3>점포 재고 색상</h3>
+      <p>오전/오후 <b>점포 재고</b>에서 탭할 색상 목록입니다. (판매 집계와는 무관 · 표시용)</p>
+      <div id="stockColorList"></div>
+      <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="addStockColor()">+ 재고 색상 추가</button>
+    </div>
+    <div class="panel">
       <h3>판매 기록 초기화</h3>
       <p>실시간 판매 누적 기록과 물자 기록을 모두 지웁니다. 일정은 남습니다.</p>
       <button class="btn btn-ghost btn-block" onclick="wipeLedger()">판매·물자 기록 삭제</button>
@@ -297,11 +303,11 @@
   </div>
   <div class="sheet-body">
     <div class="type-row" id="typeRow">
-      <span class="type-chip" data-type="am"       onclick="setType('am')"><span class="n">01</span>오전</span>
-      <span class="type-chip" data-type="pm"       onclick="setType('pm')"><span class="n">02</span>오후</span>
-      <span class="type-chip" data-type="live"     onclick="setType('live')"><span class="n">03</span>실시간</span>
-      <span class="type-chip" data-type="material" onclick="setType('material')"><span class="n">04</span>물자</span>
-      <span class="type-chip" data-type="move"     onclick="setType('move')"><span class="n">05</span>이동</span>
+      <span class="type-chip" data-type="live"     onclick="setType('live')"><span class="n">01</span>실시간</span>
+      <span class="type-chip" data-type="material" onclick="setType('material')"><span class="n">02</span>물자</span>
+      <span class="type-chip" data-type="move"     onclick="setType('move')"><span class="n">03</span>이동</span>
+      <span class="type-chip" data-type="am"       onclick="setType('am')"><span class="n">04</span>오전</span>
+      <span class="type-chip" data-type="pm"       onclick="setType('pm')"><span class="n">05</span>오후</span>
       <span class="type-chip" data-type="close"    onclick="setType('close')"><span class="n">06</span>마감</span>
     </div>
 
@@ -323,7 +329,11 @@
           <span class="opt" onclick="pick('s_target','직원',this)">직원</span>
         </div>
       </div>
-      <div class="field"><label>점포 재고</label><input type="text" id="s_stock" placeholder="예) 블랙 1대" oninput="render()"></div>
+      <div class="field">
+        <label>점포 재고 <span class="o">(탭할 때마다 +1 · 여러 색 가능)</span></label>
+        <div class="opts" id="s_stockChips" style="margin-bottom:8px;"></div>
+        <input type="text" id="s_stock" placeholder="직접 입력도 가능 (예: 블랙 1대)" oninput="s_stockTouched=true; render()">
+      </div>
       <div class="field">
         <label>스틱 발주여부</label>
         <div class="opts" data-group="s_stick">
@@ -484,7 +494,7 @@ let LEDGER={};      // 판매장부 LEDGER[teamKey][date] = [ {id,store,qty:{},r
 let curId=null;
 let filterDate='', filterTeam='전체', filterGroup='전체';
 let showPast=false, importMode='replace';
-let type='am', moveMode='confirm';
+let type='live', moveMode='confirm';
 let closeAuto=true, mcFromTouched=false;
 const V={}, FLAG={}, CC={};
 
@@ -1086,7 +1096,8 @@ function resetSheet(){
   Object.keys(V).forEach(k=>delete V[k]);
   Object.keys(FLAG).forEach(k=>delete FLAG[k]);
   Object.keys(CC).forEach(k=>delete CC[k]);
-  moveMode='confirm'; mcFromTouched=false; closeAuto=true;
+  Object.keys(SC).forEach(k=>delete SC[k]);
+  moveMode='confirm'; mcFromTouched=false; s_stockTouched=false; closeAuto=true;
   document.querySelectorAll('#sheet .opt').forEach(o=>o.classList.remove('on','yes','no'));
 }
 function applyPickUI(){
@@ -1120,11 +1131,14 @@ function openSheet(id){
     });
     Object.assign(V, rep.V||{});
     Object.assign(FLAG, rep.FLAG||{});
+    Object.assign(SC, rep.SC||{});
     moveMode=rep.moveMode||'confirm';
-    type=rep.type||'am';
+    type=rep.type||'live';
     closeAuto=(rep.closeAuto!==false);
     const sv=(rep.inputs.s_store||''), fv=(rep.inputs.mc_from||'');
     mcFromTouched=!!(fv && fv!==sv);
+    // 저장된 재고 텍스트가 칩으로 만든 문자열과 다르면 = 직접 입력한 것
+    s_stockTouched = ((rep.inputs.s_stock||'')!==stockText());
   } else {
     const ss=document.getElementById('s_store'); if(ss) ss.value=fullStore(v);
     const mf=document.getElementById('mc_from'); if(mf) mf.value=fullStore(v);
@@ -1133,7 +1147,7 @@ function openSheet(id){
   applyMat(v);
   renderLedger(v);
   recalcClose(true);
-  applyPickUI(); applyFlagUI(); buildLiveColors();
+  applyPickUI(); applyFlagUI(); buildLiveColors(); buildStockColors();
   setMove(moveMode); setType(type); markCloseNote();
   document.getElementById('sheetBg').classList.add('open');
   document.getElementById('sheet').classList.add('open');
@@ -1146,7 +1160,7 @@ function saveReport(){
   const v=DATA[curId];
   const inputs={};
   FIELD_IDS.concat(closeIds()).forEach(id=>{ const e=document.getElementById(id); if(e) inputs[id]=e.value; });
-  DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), moveMode, type, closeAuto, savedAt:Date.now() };
+  DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), SC:Object.assign({},SC), moveMode, type, closeAuto, savedAt:Date.now() };
   saveMatFor(v);
   save();
   applyMat(v);
@@ -1218,12 +1232,54 @@ function renderSettings(){
       COLORS.splice(i,1); saveColors(); renderSettings(); rebuildColorUI(); };
     row.appendChild(del); box.appendChild(row);
   });
+  // 점포 재고 색상 목록
+  const sbox=document.getElementById('stockColorList');
+  if(sbox){
+    sbox.innerHTML='';
+    STOCKC.forEach((c,i)=>{
+      const row=document.createElement('div'); row.className='color-row';
+      const inp=document.createElement('input'); inp.type='text'; inp.value=c.name||''; inp.placeholder='색상 이름';
+      inp.oninput=()=>{ STOCKC[i].name=inp.value.trim(); saveStockC(); buildStockColors(); };
+      const del=document.createElement('button'); del.className='mini-del'; del.textContent='✕';
+      del.onclick=()=>{ if(!confirm('이 재고 색상을 지울까요?')) return; STOCKC.splice(i,1); saveStockC(); renderSettings(); buildStockColors(); };
+      row.appendChild(inp); row.appendChild(del); sbox.appendChild(row);
+    });
+  }
 }
 function addColor(){
   COLORS.push({ id:'c'+Date.now(), live:'', mat:'', close:'' });
   saveColors(); renderSettings(); rebuildColorUI();
 }
 function rebuildColorUI(){ buildLiveColors(); buildMatRows(); buildCloseRows(); if(curId&&DATA[curId]){ applyMat(DATA[curId]); recalcClose(true); } }
+
+/* ─── 점포 재고 색상 (오전/오후 · 디바이스 색상과 별개 목록) ─── */
+const DEFAULT_STOCK=[{id:'sk_black',name:'블랙'},{id:'sk_silver',name:'실버'},{id:'sk_rose',name:'로즈골드'},{id:'sk_navy',name:'네이비'}];
+let STOCKC=loadStockC();
+const SC={};   // 재고 색상별 수량
+function loadStockC(){
+  try{ const a=JSON.parse(localStorage.getItem('ploomSalesStockColors')||'null'); if(Array.isArray(a)&&a.length&&a[0]&&a[0].id) return a; }catch(e){}
+  return DEFAULT_STOCK.map(c=>Object.assign({},c));
+}
+function saveStockC(){ localStorage.setItem('ploomSalesStockColors', JSON.stringify(STOCKC)); }
+let s_stockTouched=false;
+function syncStock(){ if(s_stockTouched) return; const e=document.getElementById('s_stock'); if(e) e.value=stockText(); }
+function buildStockColors(){
+  const box=document.getElementById('s_stockChips'); if(!box) return;
+  box.innerHTML='';
+  STOCKC.forEach(c=>{
+    const n=SC[c.id]||0;
+    const el=document.createElement('span');
+    el.className='opt'+(n>0?' on':'');
+    el.innerHTML=esc(c.name)+(n>0?'<span class="cnt">'+n+'</span>':'');
+    el.onclick=()=>{ SC[c.id]=((SC[c.id]||0)+1)%10; buildStockColors(); syncStock(); render(); };
+    box.appendChild(el);
+  });
+}
+function stockText(){
+  const parts=[]; STOCKC.forEach(c=>{ const n=SC[c.id]||0; if(n>0) parts.push(c.name+' '+n); });
+  return parts.join(', ');
+}
+function addStockColor(){ STOCKC.push({id:'sk'+Date.now(), name:''}); saveStockC(); renderSettings(); buildStockColors(); }
 
 /* ═══════════ 보고문 ═══════════ */
 function buildText(){
@@ -1333,7 +1389,7 @@ function switchView(v){
 /* ═══════════ 시작 ═══════════ */
 window.addEventListener('DOMContentLoaded',()=>{
   load(); loadMat(); loadLedger(); loadRank();
-  buildMatRows(); buildCloseRows(); buildLiveColors();
+  buildMatRows(); buildCloseRows(); buildLiveColors(); buildStockColors();
   renderAll(); renderSettings(); renderRankUI(); tagOptVals();
   const n=document.getElementById('rk_name'); if(n&&RANKME) n.value=RANKME.name||'';
   const t=document.getElementById('rk_team'); if(t&&RANKME) t.value=(RANKME.teamId||'')+'팀';
