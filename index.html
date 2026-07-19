@@ -435,7 +435,11 @@
             <span class="opt" onclick="pick('md_target','직원',this)">직원</span>
           </div>
         </div>
-        <div class="field"><label>점포 재고</label><input type="text" id="md_stock" placeholder="예) 실버1/블랙1" oninput="render()"></div>
+        <div class="field">
+          <label>점포 재고 <span class="o">(탭할 때마다 +1 · 최대 2)</span></label>
+          <div class="opts" id="md_stockChips" style="margin-bottom:8px;"></div>
+          <input type="text" id="md_stock" placeholder="직접 입력도 가능 (예: 실버1/블랙1)" oninput="md_stockTouched=true; render()">
+        </div>
         <div class="field"><label>인근 점포</label><input type="text" id="md_nearby" placeholder="예) cu 마곡더랜드" oninput="render()"></div>
         <div class="field"><label>진행 동의</label><div class="opts"><span class="opt" id="md_agree" onclick="toggleFlag('md_agree')">안내 및 진행 동의 완료</span></div></div>
         <div class="field"><label>점포 피드백</label><input type="text" id="md_feedback" placeholder="예) 호의적이십니다!" oninput="render()"></div>
@@ -1097,7 +1101,8 @@ function resetSheet(){
   Object.keys(FLAG).forEach(k=>delete FLAG[k]);
   Object.keys(CC).forEach(k=>delete CC[k]);
   Object.keys(SC).forEach(k=>delete SC[k]);
-  moveMode='confirm'; mcFromTouched=false; s_stockTouched=false; closeAuto=true;
+  Object.keys(MSC).forEach(k=>delete MSC[k]);
+  moveMode='confirm'; mcFromTouched=false; s_stockTouched=false; md_stockTouched=false; closeAuto=true;
   document.querySelectorAll('#sheet .opt').forEach(o=>o.classList.remove('on','yes','no'));
 }
 function applyPickUI(){
@@ -1132,6 +1137,7 @@ function openSheet(id){
     Object.assign(V, rep.V||{});
     Object.assign(FLAG, rep.FLAG||{});
     Object.assign(SC, rep.SC||{});
+    Object.assign(MSC, rep.MSC||{});
     moveMode=rep.moveMode||'confirm';
     type=rep.type||'live';
     closeAuto=(rep.closeAuto!==false);
@@ -1139,6 +1145,7 @@ function openSheet(id){
     mcFromTouched=!!(fv && fv!==sv);
     // 저장된 재고 텍스트가 칩으로 만든 문자열과 다르면 = 직접 입력한 것
     s_stockTouched = ((rep.inputs.s_stock||'')!==stockText());
+    md_stockTouched = ((rep.inputs.md_stock||'')!==mdStockText());
   } else {
     const ss=document.getElementById('s_store'); if(ss) ss.value=fullStore(v);
     const mf=document.getElementById('mc_from'); if(mf) mf.value=fullStore(v);
@@ -1147,7 +1154,7 @@ function openSheet(id){
   applyMat(v);
   renderLedger(v);
   recalcClose(true);
-  applyPickUI(); applyFlagUI(); buildLiveColors(); buildStockColors();
+  applyPickUI(); applyFlagUI(); buildLiveColors(); buildStockColors(); buildMdStockColors();
   setMove(moveMode); setType(type); markCloseNote();
   document.getElementById('sheetBg').classList.add('open');
   document.getElementById('sheet').classList.add('open');
@@ -1160,7 +1167,7 @@ function saveReport(){
   const v=DATA[curId];
   const inputs={};
   FIELD_IDS.concat(closeIds()).forEach(id=>{ const e=document.getElementById(id); if(e) inputs[id]=e.value; });
-  DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), SC:Object.assign({},SC), moveMode, type, closeAuto, savedAt:Date.now() };
+  DATA[curId].report={ inputs, V:Object.assign({},V), FLAG:Object.assign({},FLAG), SC:Object.assign({},SC), MSC:Object.assign({},MSC), moveMode, type, closeAuto, savedAt:Date.now() };
   saveMatFor(v);
   save();
   applyMat(v);
@@ -1239,9 +1246,9 @@ function renderSettings(){
     STOCKC.forEach((c,i)=>{
       const row=document.createElement('div'); row.className='color-row';
       const inp=document.createElement('input'); inp.type='text'; inp.value=c.name||''; inp.placeholder='색상 이름';
-      inp.oninput=()=>{ STOCKC[i].name=inp.value.trim(); saveStockC(); buildStockColors(); };
+      inp.oninput=()=>{ STOCKC[i].name=inp.value.trim(); saveStockC(); buildStockColors(); buildMdStockColors(); };
       const del=document.createElement('button'); del.className='mini-del'; del.textContent='✕';
-      del.onclick=()=>{ if(!confirm('이 재고 색상을 지울까요?')) return; STOCKC.splice(i,1); saveStockC(); renderSettings(); buildStockColors(); };
+      del.onclick=()=>{ if(!confirm('이 재고 색상을 지울까요?')) return; STOCKC.splice(i,1); saveStockC(); renderSettings(); buildStockColors(); buildMdStockColors(); };
       row.appendChild(inp); row.appendChild(del); sbox.appendChild(row);
     });
   }
@@ -1279,7 +1286,25 @@ function stockText(){
   const parts=[]; STOCKC.forEach(c=>{ const n=SC[c.id]||0; if(n>0) parts.push(c.name+' '+n); });
   return parts.join(', ');
 }
-function addStockColor(){ STOCKC.push({id:'sk'+Date.now(), name:''}); saveStockC(); renderSettings(); buildStockColors(); }
+function addStockColor(){ STOCKC.push({id:'sk'+Date.now(), name:''}); saveStockC(); renderSettings(); buildStockColors(); buildMdStockColors(); }
+
+/* ─── 이동 완료 보고 점포 재고 (같은 STOCKC 목록 · 별도 카운트 · 최대 2) ─── */
+const MSC={};
+let md_stockTouched=false;
+function mdStockText(){ const parts=[]; STOCKC.forEach(c=>{ const n=MSC[c.id]||0; if(n>0) parts.push(c.name+n); }); return parts.join('/'); }
+function syncMdStock(){ if(md_stockTouched) return; const e=document.getElementById('md_stock'); if(e) e.value=mdStockText(); }
+function buildMdStockColors(){
+  const box=document.getElementById('md_stockChips'); if(!box) return;
+  box.innerHTML='';
+  STOCKC.forEach(c=>{
+    const n=MSC[c.id]||0;
+    const el=document.createElement('span');
+    el.className='opt'+(n===1?' on':n>=2?' on yes':'');
+    el.innerHTML=esc(c.name)+(n>0?'<span class="cnt">'+n+'</span>':'');
+    el.onclick=()=>{ MSC[c.id]=((MSC[c.id]||0)+1)%3; buildMdStockColors(); syncMdStock(); render(); };
+    box.appendChild(el);
+  });
+}
 
 /* ═══════════ 보고문 ═══════════ */
 function buildText(){
@@ -1389,7 +1414,7 @@ function switchView(v){
 /* ═══════════ 시작 ═══════════ */
 window.addEventListener('DOMContentLoaded',()=>{
   load(); loadMat(); loadLedger(); loadRank();
-  buildMatRows(); buildCloseRows(); buildLiveColors(); buildStockColors();
+  buildMatRows(); buildCloseRows(); buildLiveColors(); buildStockColors(); buildMdStockColors();
   renderAll(); renderSettings(); renderRankUI(); tagOptVals();
   const n=document.getElementById('rk_name'); if(n&&RANKME) n.value=RANKME.name||'';
   const t=document.getElementById('rk_team'); if(t&&RANKME) t.value=(RANKME.teamId||'')+'팀';
