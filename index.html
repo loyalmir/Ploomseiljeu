@@ -276,14 +276,6 @@
       <div class="hint">헤더는 <b>팀 / 세일즈 진행 일차 / 날짜 / 요일 / 점포/흡연구역 / 점포 타입 / 점포명 / 주소 / 점포코드</b> 를 인식합니다.</div>
     </div>
     <div class="panel">
-      <h3>또는 CSV 붙여넣기</h3>
-      <textarea id="csvInput" placeholder="여기에 CSV 붙여넣기…" style="min-height:80px; font-size:13px;" class="mono"></textarea>
-      <div class="row" style="margin-top:11px;">
-        <button class="btn btn-ghost" style="flex:1;" onclick="importCSV()">CSV 채우기</button>
-        <button class="btn btn-ghost" onclick="loadSample()">예시 넣기</button>
-      </div>
-    </div>
-    <div class="panel">
       <h3>전체 일정 <span class="mono" id="schedCount" style="color:var(--txt-faint); font-size:13px;"></span></h3>
       <p>탭하면 보고 화면이 열립니다. 길게 눌러 삭제.</p>
       <button class="btn btn-ghost btn-block" onclick="wipeData()">전체 일정 삭제</button>
@@ -864,49 +856,6 @@ function normBrand(b){ return (b||'').replace(/\s+/g,''); }
 function serialToDate(serial){ return new Date(Math.round((serial-25569)*86400000)); }
 function normDate(raw){ if(!raw) return ''; const m=raw.match(/(\d{1,2})\D+(\d{1,2})/); return m?m[1]+'.'+m[2]:raw; }
 function setImportMode(m){ importMode=m; document.getElementById('impNew').classList.toggle('on',m==='replace'); document.getElementById('impAdd').classList.toggle('on',m==='merge'); }
-function parseCSV(text){
-  const rows=[]; const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim()!=='');
-  for(const line of lines){ const cells=[]; let cur='',q=false;
-    for(let i=0;i<line.length;i++){ const c=line[i];
-      if(c==='"'){ q=!q; } else if(c===','&&!q){ cells.push(cur); cur=''; } else cur+=c; }
-    cells.push(cur); rows.push(cells.map(s=>s.trim())); }
-  return rows;
-}
-function col(header, names){ for(const n of names){ const i=header.indexOf(n); if(i>=0) return i; } return -1; }
-const DEMO=`차수,구분,날짜,매장명,요일,주소,팀,편의점,코드
-6,점포,7월 15,노량메가점,수요일,서울 동작구 노량진로 140 1층,3팀,GS25,KA_05-042885
-6,점포,7월 15,구로대륭점,수요일,서울 구로구 디지털로34길 27,14팀,세븐일레븐,KA_05-042886
-6,흡연구역,7월 16,금천하이시티점,목요일,서울 금천구 가산디지털1로 131,3팀,CU,KA_05-042887`;
-
-function importCSVText(text, silent){
-  const rows=parseCSV(text);
-  if(rows.length<2){ if(!silent) impMsg('<span class="warn">읽을 데이터가 없어요.</span>'); return; }
-  const h=rows[0];
-  const ci={ round:col(h,['차수','세일즈 진행 일차']), type:col(h,['구분','점포/흡연구역']), date:col(h,['날짜']),
-    store:col(h,['매장명','점포명']), dow:col(h,['요일']), addr:col(h,['주소']),
-    team:col(h,['팀']), brand:col(h,['편의점','점포 타입']), code:col(h,['점포코드','코드']) };
-  if(ci.store<0||ci.team<0){ if(!silent) impMsg('<span class="warn">매장명/팀 열을 못 찾았어요.</span>'); return; }
-  const next=(importMode==='merge')?Object.assign({},DATA):{};
-  const groupVal=(document.getElementById('impGroup').value||'').trim();
-  let n=0;
-  for(let r=1;r<rows.length;r++){
-    const row=rows[r];
-    const store=(row[ci.store]||'').trim(); if(!store||store.startsWith('—')) continue;
-    const team=(row[ci.team]||'').trim(); if(!team) continue;
-    const dk=normDate((ci.date>=0?row[ci.date]:'').trim());
-    const id='v_'+team+'_'+store+'_'+dk;
-    next[id]={ id, team, type:(ci.type>=0?row[ci.type]:'점포').trim()||'점포',
-      date:dk, dateKey:dk, store, dow:(ci.dow>=0?row[ci.dow]:'').trim(),
-      addr:(ci.addr>=0?row[ci.addr]:'').trim(), brand:normBrand(ci.brand>=0?row[ci.brand]:''),
-      round:(ci.round>=0?row[ci.round]:'').trim(), storeCode:(ci.code>=0?row[ci.code]:'').trim(),
-      group:groupVal, report:(DATA[id]&&DATA[id].report)?DATA[id].report:undefined };
-    n++;
-  }
-  DATA=next; save();
-  if(!silent) impMsg('<span class="ok">'+n+'개 일정을 채웠어요.</span>'); toast(n+'개 일정 채움');
-}
-function importCSV(){ importCSVText(document.getElementById('csvInput').value,false); }
-function loadSample(){ document.getElementById('csvInput').value=DEMO; importCSV(); }
 function impMsg(html){ document.getElementById('importMsg').innerHTML=html; }
 
 function importExcel(ev){
