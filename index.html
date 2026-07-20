@@ -72,6 +72,8 @@
   .btn-green{background:var(--green); color:#08251A;}
   .btn-kakao{background:var(--kakao); color:var(--kakao-ink);}
   .btn-ghost{background:var(--surface-2); color:var(--txt); border:1px solid var(--line);}
+  .btn-danger{background:rgba(255,107,92,.12); color:var(--coral); border:1px solid rgba(255,107,92,.35);}
+  .btn-danger:active{background:var(--coral); color:#fff;}
   .btn-block{width:100%;}
   .btn-sm{padding:9px 12px; font-size:13px;}
 
@@ -251,6 +253,12 @@
       <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="addStockColor()">+ 재고 색상 추가</button>
     </div>
     <div class="panel">
+      <h3>구매혜택 종류</h3>
+      <p>실시간 세일즈에서 입력할 <b>구매혜택</b> 목록입니다. 이름에 <b>‘스타벅스’</b>가 들어간 항목은 물자/마감의 스타벅스 카드 소진과 연결됩니다.</p>
+      <div id="benefitList"></div>
+      <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="addBenefit()">+ 구매혜택 추가</button>
+    </div>
+    <div class="panel">
       <h3>판매 기록 초기화</h3>
       <p>실시간 판매 누적 기록과 물자 기록을 모두 지웁니다. 일정은 남습니다.</p>
       <button class="btn btn-ghost btn-block" onclick="wipeLedger()">판매·물자 기록 삭제</button>
@@ -375,7 +383,7 @@
           <span class="opt" onclick="pick('l_kakao','X',this,'no')">X</span>
         </div>
       </div>
-      <div class="qty-row" style="margin-bottom:16px;"><span class="nm">구매혜택(스타벅스)</span><input type="text" inputmode="numeric" id="l_sbux" placeholder="0" oninput="render()"></div>
+      <div id="l_benefits" style="margin-bottom:16px;"></div>
       <div class="grp">
         <div class="grp-t">이 날 판매 누적 <span id="ledgerCount" class="right mono"></span></div>
         <div id="ledgerList"></div>
@@ -675,9 +683,12 @@ function addSale(v){
   // 이 날 물자가 아직 확정 안 됐으면 지금 값(이어받은 시작수량)으로 확정 → 다음날 연결이 끊기지 않게
   if(!(MAT[k]&&MAT[k][v.dateKey])) saveMatFor(v);
   LEDGER[k]=LEDGER[k]||{}; LEDGER[k][v.dateKey]=LEDGER[k][v.dateKey]||[];
+  const benefits={}; BENEFITS.forEach(b=>{ const n=n0('lb_'+b.id); if(n>0) benefits[b.id]=n; });
+  const cardId=cardBenefitId();
   const entry={
     id:'s'+Date.now(), store:gv('s_store')||fullStore(v), qty,
-    route:V.l_route||'', join:V.l_join||'', kakao:V.l_kakao||'', sbux:n0('l_sbux'),
+    route:V.l_route||'', join:V.l_join||'', kakao:V.l_kakao||'',
+    benefits, sbux:(cardId?n0('lb_'+cardId):0),   // sbux = 스타벅스 혜택 수량 → 물자/마감 카드 소진에 연결
     at:new Date().toISOString()
   };
   LEDGER[k][v.dateKey].push(entry);
@@ -692,9 +703,9 @@ function addSale(v){
       toast('랭킹 등록 실패 · 네트워크 확인');
     });
   }
-  // 다음 판매를 위해 색상만 리셋
+  // 다음 판매를 위해 색상·혜택 리셋
   Object.keys(CC).forEach(x=>delete CC[x]);
-  const ls=document.getElementById('l_sbux'); if(ls) ls.value='';
+  BENEFITS.forEach(b=>{ const e=document.getElementById('lb_'+b.id); if(e) e.value=''; });
   buildLiveColors(); renderLedger(v); refreshMatCalc(); recalcClose(true); render(); renderAll();
 }
 function delSale(sid){
@@ -721,7 +732,10 @@ function renderLedger(v){
     }).join(', ');
     const t=new Date(e.at); const hh=String(t.getHours()).padStart(2,'0'), mm=String(t.getMinutes()).padStart(2,'0');
     const badge = e.rank ? '<span class="rk-ok">랭킹 ✓</span>' : (e.rankFail ? '<span class="rk-no">랭킹 실패</span>' : '');
-    const sub=[e.route, e.sbux?('스벅 '+e.sbux):''].filter(Boolean).join(' · ');
+    const bfTxt=(e.benefits&&Object.keys(e.benefits).length)
+      ? BENEFITS.filter(b=>e.benefits[b.id]>0).map(b=>b.name+' '+e.benefits[b.id]).join(' · ')
+      : (e.sbux?('스벅 '+e.sbux):'');
+    const sub=[e.route, bfTxt].filter(Boolean).join(' · ');
     return '<div class="led"><span class="t">'+hh+':'+mm+'</span><div><div class="c">'+esc(names)+' '+badge+'</div>'
       +(sub?'<div class="s">'+esc(sub)+'</div>':'')+'</div>'
       +'<button class="x" onclick="delSale(\''+e.id+'\')">✕</button></div>';
@@ -1033,7 +1047,7 @@ function renderSchedule(){
 function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에서 지울까요?')){ delete DATA[id]; save(); } }
 
 /* ═══════════ 편집 시트 ═══════════ */
-const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand','l_sbux',
+const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand',
   'mc_from','mc_to','mc_reason','mc_extra','md_store','md_stock','md_nearby','md_feedback','md_extra',
   'c_date','c_sbux_s','c_sbux_r'];
 const FLAG_IDS=['md_agree','md_consent'];
@@ -1103,7 +1117,7 @@ function openSheet(id){
   applyMat(v);
   renderLedger(v);
   recalcClose(true);
-  applyPickUI(); applyFlagUI(); buildLiveColors(); buildStockColors(); buildMdStockColors();
+  applyPickUI(); applyFlagUI(); buildLiveColors(); buildStockColors(); buildMdStockColors(); buildBenefitInputs();
   setMove(moveMode); setType(type); markCloseNote();
   document.getElementById('sheetBg').classList.add('open');
   document.getElementById('sheet').classList.add('open');
@@ -1201,6 +1215,19 @@ function renderSettings(){
       row.appendChild(inp); row.appendChild(del); sbox.appendChild(row);
     });
   }
+  // 구매혜택 종류
+  const bbox=document.getElementById('benefitList');
+  if(bbox){
+    bbox.innerHTML='';
+    BENEFITS.forEach((b,i)=>{
+      const row=document.createElement('div'); row.className='color-row';
+      const inp=document.createElement('input'); inp.type='text'; inp.value=b.name||''; inp.placeholder='혜택 이름 (예: 스타벅스)';
+      inp.oninput=()=>{ BENEFITS[i].name=inp.value.trim(); saveBenefits(); buildBenefitInputs(); render(); };
+      const del=document.createElement('button'); del.className='mini-del'; del.textContent='✕';
+      del.onclick=()=>{ if(BENEFITS.length<=1){ toast('최소 1개는 있어야 해'); return; } if(!confirm('이 구매혜택을 지울까요?')) return; BENEFITS.splice(i,1); saveBenefits(); renderSettings(); buildBenefitInputs(); render(); };
+      row.appendChild(inp); row.appendChild(del); bbox.appendChild(row);
+    });
+  }
 }
 function addColor(){
   COLORS.push({ id:'c'+Date.now(), live:'', mat:'', close:'' });
@@ -1236,6 +1263,29 @@ function stockText(){
   return parts.join(', ');
 }
 function addStockColor(){ STOCKC.push({id:'sk'+Date.now(), name:''}); saveStockC(); renderSettings(); buildStockColors(); buildMdStockColors(); }
+
+/* ─── 구매혜택 종류 (실시간 · 설정에서 추가/삭제/수정) ─── */
+const DEFAULT_BENEFITS=[{id:'bf_sbux', name:'스타벅스'}];
+let BENEFITS=loadBenefits();
+function loadBenefits(){
+  try{ const a=JSON.parse(localStorage.getItem('ploomSalesBenefits')||'null'); if(Array.isArray(a)&&a.length&&a[0]&&a[0].id) return a; }catch(e){}
+  return DEFAULT_BENEFITS.map(b=>Object.assign({},b));
+}
+function saveBenefits(){ localStorage.setItem('ploomSalesBenefits', JSON.stringify(BENEFITS)); }
+/* 물자/마감 스타벅스 카드에 연결되는 혜택 = 이름에 '스타벅스/스벅' 포함, 없으면 첫 번째 */
+function cardBenefitId(){ const b=BENEFITS.find(x=>/스타벅스|스벅/.test(x.name||'')); return b?b.id:(BENEFITS[0]?BENEFITS[0].id:''); }
+function buildBenefitInputs(){
+  const box=document.getElementById('l_benefits'); if(!box) return;
+  box.innerHTML='';
+  BENEFITS.forEach(b=>{
+    const row=document.createElement('div'); row.className='qty-row'; row.style.marginBottom='8px';
+    const nm=document.createElement('span'); nm.className='nm'; nm.textContent='구매혜택('+(b.name||'')+')';
+    const inp=document.createElement('input'); inp.type='text'; inp.inputMode='numeric'; inp.id='lb_'+b.id; inp.placeholder='0';
+    inp.oninput=()=>render();
+    row.appendChild(nm); row.appendChild(inp); box.appendChild(row);
+  });
+}
+function addBenefit(){ BENEFITS.push({id:'bf'+Date.now(), name:''}); saveBenefits(); renderSettings(); buildBenefitInputs(); }
 
 /* ─── 이동 완료 보고 점포 재고 (같은 STOCKC 목록 · 별도 카운트 · 최대 2) ─── */
 const MSC={};
@@ -1289,7 +1339,7 @@ function tLive(){
   L.push('판매경로 : '+(V.l_route||''));
   L.push('회원가입 여부 : '+(V.l_join||''));
   L.push('카톡 친추 여부 : '+(V.l_kakao||''));
-  L.push('구매혜택(스타벅스) : '+n0('l_sbux'));
+  BENEFITS.forEach(b=>{ L.push('구매혜택('+(b.name||'')+') : '+n0('lb_'+b.id)); });
   return L.join('\n');
 }
 function tMaterial(){
@@ -1363,7 +1413,7 @@ function switchView(v){
 /* ═══════════ 시작 ═══════════ */
 window.addEventListener('DOMContentLoaded',()=>{
   load(); loadMat(); loadLedger(); loadRank();
-  buildMatRows(); buildCloseRows(); buildLiveColors(); buildStockColors(); buildMdStockColors();
+  buildMatRows(); buildCloseRows(); buildLiveColors(); buildStockColors(); buildMdStockColors(); buildBenefitInputs();
   renderAll(); renderSettings(); renderRankUI(); tagOptVals();
   const n=document.getElementById('rk_name'); if(n&&RANKME) n.value=RANKME.name||'';
   const t=document.getElementById('rk_team'); if(t&&RANKME) t.value=(RANKME.teamId||'')+'팀';
