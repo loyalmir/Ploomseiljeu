@@ -309,6 +309,7 @@
       <span class="type-chip" data-type="am"       onclick="setType('am')"><span class="n">04</span>오전</span>
       <span class="type-chip" data-type="pm"       onclick="setType('pm')"><span class="n">05</span>오후</span>
       <span class="type-chip" data-type="close"    onclick="setType('close')"><span class="n">06</span>마감</span>
+      <span class="type-chip" data-type="final"    onclick="setType('final')"><span class="n">07</span>최종마감</span>
     </div>
 
     <!-- 01·02 오전/오후 -->
@@ -465,6 +466,17 @@
           <input type="text" inputmode="numeric" id="c_sbux_s" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()"><span class="slash">/</span>
           <input type="text" inputmode="numeric" id="c_sbux_r" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()">
         </div>
+      </div>
+    </div>
+
+    <!-- 07 최종마감 -->
+    <div class="form none" id="f-final">
+      <div class="mat-note own" style="margin-bottom:14px;">그 날 <b>이 팀 판매 대수 합계</b>가 세일즈 총 건에 자동으로 들어갑니다.</div>
+      <div class="qty-row" style="margin-bottom:14px;"><span class="nm">세일즈 총 건 <span class="o">(자동)</span></span><span id="fn_total" class="qty-total">0</span></div>
+      <div class="qty-row"><span class="nm">차용</span><input type="text" inputmode="numeric" id="fn_borrow" placeholder="0" oninput="render()"></div>
+      <div class="field" style="margin-top:14px;">
+        <label>물자 철수</label>
+        <div class="opts"><span class="opt" id="fn_withdraw" onclick="toggleFlag('fn_withdraw')">철수 완료</span></div>
       </div>
     </div>
 
@@ -1049,8 +1061,8 @@ function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에
 /* ═══════════ 편집 시트 ═══════════ */
 const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand',
   'mc_from','mc_to','mc_reason','mc_extra','md_store','md_stock','md_nearby','md_feedback','md_extra',
-  'c_date','c_sbux_s','c_sbux_r'];
-const FLAG_IDS=['md_agree','md_consent'];
+  'c_date','c_sbux_s','c_sbux_r','fn_borrow'];
+const FLAG_IDS=['md_agree','md_consent','fn_withdraw'];
 function closeIds(){ const a=[]; COLORS.forEach(c=>{ a.push('cs_'+c.id); a.push('cr_'+c.id); }); return a; }
 
 function syncFromStore(){
@@ -1144,7 +1156,7 @@ function setType(tp){
   if(tp==='material') refreshMatCalc();
   document.querySelectorAll('.type-chip').forEach(c=>c.classList.toggle('on',c.dataset.type===tp));
   document.querySelectorAll('.form').forEach(f=>f.classList.add('none'));
-  const map={am:'f-sales',pm:'f-sales',live:'f-live',material:'f-material',move:'f-move',close:'f-close'};
+  const map={am:'f-sales',pm:'f-sales',live:'f-live',material:'f-material',move:'f-move',close:'f-close',final:'f-final'};
   document.getElementById(map[tp]).classList.remove('none');
   const mb=document.getElementById('mainBtn');
   if(mb){ mb.textContent=(tp==='live')?'판매 기록 +':'저장'; mb.className='btn '+((tp==='live')?'btn-green':'btn-primary'); }
@@ -1312,6 +1324,7 @@ function buildText(){
   if(type==='material') return tMaterial();
   if(type==='move') return moveMode==='confirm'?tMoveConfirm():tMoveDone();
   if(type==='close') return tClose();
+  if(type==='final') return tFinal();
   return '';
 }
 function tSales(when){
@@ -1377,6 +1390,22 @@ function tMoveDone(){
   const ex=gv('md_extra'); if(ex){ L.push(''); L.push(ex); }
   return L.join('\n');
 }
+/* 그 날 이 팀 판매 대수 합계 */
+function daySalesTotal(v){
+  const sold=soldAt(matKey(v), v.dateKey);
+  let t=0; COLORS.forEach(c=>t+=toInt(sold[c.id])); return t;
+}
+function tFinal(){
+  const v=curId?DATA[curId]:null;
+  const total=v?daySalesTotal(v):0;
+  const L=[];
+  L.push(teamName());
+  L.push('세일즈 마감보고');
+  L.push('세일즈 : 총 '+total+'건');
+  L.push('차용 : '+n0('fn_borrow')+'건');
+  if(FLAG.fn_withdraw) L.push(teamName()+' 물자철수 완료');
+  return L.join('\n');
+}
 function tClose(){
   const date=gv('c_date')||todayKey().replace('.','/');
   const L=[];
@@ -1389,7 +1418,10 @@ function tClose(){
 }
 
 /* ═══════════ 렌더 / 복사 / 공유 ═══════════ */
-function render(){ document.getElementById('preview').textContent=buildText()||'—'; }
+function render(){
+  if(type==='final' && curId && DATA[curId]){ const el=document.getElementById('fn_total'); if(el) el.textContent=daySalesTotal(DATA[curId]); }
+  document.getElementById('preview').textContent=buildText()||'—';
+}
 async function copyOut(){
   const t=buildText();
   try{ await navigator.clipboard.writeText(t); }
