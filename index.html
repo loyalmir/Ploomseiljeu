@@ -254,7 +254,7 @@
     </div>
     <div class="panel">
       <h3>구매혜택 종류</h3>
-      <p>실시간 세일즈에서 입력할 <b>구매혜택</b> 목록입니다. 이름에 <b>‘스타벅스’</b>가 들어간 항목은 물자/마감의 스타벅스 카드 소진과 연결됩니다.</p>
+      <p>실시간 세일즈에서 입력할 <b>구매혜택</b> 목록입니다. 여기 넣은 항목은 <b>물자·마감</b>에서도 각각 보유/소진/잔여로 추적됩니다.</p>
       <div id="benefitList"></div>
       <button class="btn btn-ghost btn-block" style="margin-top:6px;" onclick="addBenefit()">+ 구매혜택 추가</button>
     </div>
@@ -403,14 +403,9 @@
         <div class="mat-head"><span class="n"></span><span class="a">보유</span><span class="b">판매</span><span class="c">잔여</span></div>
         <div id="matRows"></div>
       </div>
-      <div class="grp"><div class="grp-t">스타벅스 카드</div>
+      <div class="grp"><div class="grp-t">구매혜택</div>
         <div class="mat-head"><span class="n"></span><span class="a">보유</span><span class="b">소진</span><span class="c">잔여</span></div>
-        <div class="mat-row">
-          <span class="nm">카드</span>
-          <input type="text" inputmode="numeric" id="m_sbux" placeholder="0" oninput="refreshMatCalc(); render()">
-          <span class="sold" id="msold_sbux">−0</span>
-          <span class="left" id="mleft_sbux">0</span>
-        </div>
+        <div id="matBenefitRows"></div>
       </div>
       <button class="btn btn-ghost btn-block none" id="matClear" onclick="clearMatDay()">이 날 물자 지우기 · 전날 잔여 다시 받기</button>
     </div>
@@ -460,12 +455,9 @@
         <div class="qty-head"><span class="n"></span><span class="c">판매</span><span class="c">잔여</span></div>
         <div id="closeRows"></div>
       </div>
-      <div class="grp"><div class="grp-t">스타벅스 카드</div>
+      <div class="grp"><div class="grp-t">구매혜택</div>
         <div class="qty-head"><span class="n"></span><span class="c">소진</span><span class="c">잔여</span></div>
-        <div class="qty-row"><span class="nm">카드</span>
-          <input type="text" inputmode="numeric" id="c_sbux_s" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()"><span class="slash">/</span>
-          <input type="text" inputmode="numeric" id="c_sbux_r" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()">
-        </div>
+        <div id="closeBenefitRows"></div>
       </div>
     </div>
 
@@ -681,11 +673,22 @@ function matKey(v){ return (v.group||'')+'|'+(v.team||''); }
 function ledgerAt(k,date){ return (LEDGER[k]||{})[date]||[]; }
 function soldAt(k,date){
   const out={sbux:0}; COLORS.forEach(c=>out[c.id]=0);
+  const ben={}; BENEFITS.forEach(b=>ben[b.id]=0);
   ledgerAt(k,date).forEach(e=>{
     Object.entries(e.qty||{}).forEach(([cid,n])=>{ out[cid]=(out[cid]||0)+toInt(n); });
+    if(e.benefits && Object.keys(e.benefits).length){
+      Object.entries(e.benefits).forEach(([bid,n])=>{ ben[bid]=(ben[bid]||0)+toInt(n); });
+    } else if(e.sbux){ const c=cardBenefitId(); if(c) ben[c]=(ben[c]||0)+toInt(e.sbux); }
     out.sbux+=toInt(e.sbux);
   });
+  out.ben=ben;
   return out;
+}
+/* 물자 기록에서 혜택별 보유수량 꺼내기 (옛 기록의 단일 sbux → 스타벅스 카드로 이관) */
+function matHold(rec){
+  if(rec && rec.benefits) return rec.benefits;
+  if(rec && rec.sbux!=null){ const o={}; const c=cardBenefitId(); if(c) o[c]=rec.sbux; return o; }
+  return {};
 }
 function addSale(v){
   const qty={}; let total=0;
@@ -763,8 +766,9 @@ function findMat(v){
   const p=byDate[prev], sold=soldAt(k,prev);
   const qty={};
   COLORS.forEach(c=>{ qty[c.id]=Math.max(0, toInt(p.qty&&p.qty[c.id]) - toInt(sold[c.id])); });
-  const sbux=Math.max(0, toInt(p.sbux) - toInt(sold.sbux));
-  return { data:{ m_box:p.m_box, m_serial:p.m_serial, sbux, qty }, inherited:true, from:prev };
+  const prevHold=matHold(p), benefits={};
+  BENEFITS.forEach(b=>{ benefits[b.id]=Math.max(0, toInt(prevHold[b.id]) - toInt(sold.ben[b.id])); });
+  return { data:{ m_box:p.m_box, m_serial:p.m_serial, benefits, qty }, inherited:true, from:prev };
 }
 function buildMatRows(){
   const box=document.getElementById('matRows'); if(!box) return;
@@ -773,6 +777,15 @@ function buildMatRows(){
     +'<input type="text" inputmode="numeric" id="mq_'+c.id+'" placeholder="0" oninput="refreshMatCalc(); render()">'
     +'<span class="sold" id="msold_'+c.id+'">−0</span>'
     +'<span class="left" id="mleft_'+c.id+'">0</span></div>'
+  ).join('');
+}
+function buildMatBenefitRows(){
+  const box=document.getElementById('matBenefitRows'); if(!box) return;
+  box.innerHTML=BENEFITS.map(b=>
+    '<div class="mat-row"><span class="nm">'+esc(b.name||'')+'</span>'
+    +'<input type="text" inputmode="numeric" id="mb_'+b.id+'" placeholder="0" oninput="refreshMatCalc(); render()">'
+    +'<span class="sold" id="mbsold_'+b.id+'">−0</span>'
+    +'<span class="left" id="mbleft_'+b.id+'">0</span></div>'
   ).join('');
 }
 function refreshMatCalc(){
@@ -785,9 +798,11 @@ function refreshMatCalc(){
     const le=document.getElementById('mleft_'+c.id);
     if(le){ le.textContent=left; le.className='left'+(left<0?' neg':''); }
   });
-  const ss=toInt(sold.sbux), sh=n0('m_sbux'), sl=sh-ss;
-  const sse=document.getElementById('msold_sbux'); if(sse){ sse.textContent='−'+ss; sse.className='sold'+(ss?'':' zero'); }
-  const sle=document.getElementById('mleft_sbux'); if(sle){ sle.textContent=sl; sle.className='left'+(sl<0?' neg':''); }
+  const ss2=sold; BENEFITS.forEach(b=>{
+    const s=toInt(sold.ben[b.id]), have=n0('mb_'+b.id), left=have-s;
+    const se=document.getElementById('mbsold_'+b.id); if(se){ se.textContent='−'+s; se.className='sold'+(s?'':' zero'); }
+    const le=document.getElementById('mbleft_'+b.id); if(le){ le.textContent=left; le.className='left'+(left<0?' neg':''); }
+  });
 }
 function applyMat(v){
   const found=findMat(v);
@@ -796,7 +811,8 @@ function applyMat(v){
     const d=found.data;
     const mb=document.getElementById('m_box'); if(mb) mb.value=d.m_box||'';
     const ms=document.getElementById('m_serial'); if(ms) ms.value=d.m_serial||'';
-    const sb=document.getElementById('m_sbux'); if(sb) sb.value=(d.sbux!=null&&d.sbux!=='')?d.sbux:'';
+    const hold=matHold(d);
+    BENEFITS.forEach(b=>{ const e=document.getElementById('mb_'+b.id); if(e) e.value=(hold[b.id]!=null&&hold[b.id]!=='')?hold[b.id]:''; });
     COLORS.forEach(c=>{ const e=document.getElementById('mq_'+c.id); if(e) e.value=(d.qty&&d.qty[c.id]!=null)?d.qty[c.id]:''; });
     if(note){
       note.className='mat-note '+(found.inherited?'inherit':'own');
@@ -807,7 +823,7 @@ function applyMat(v){
   } else {
     const mb=document.getElementById('m_box'); if(mb) mb.value='';
     const ms=document.getElementById('m_serial'); if(ms) ms.value='';
-    const sb=document.getElementById('m_sbux'); if(sb) sb.value='';
+    BENEFITS.forEach(b=>{ const e=document.getElementById('mb_'+b.id); if(e) e.value=''; });
     COLORS.forEach(c=>{ const e=document.getElementById('mq_'+c.id); if(e) e.value=''; });
     if(note){ note.className='mat-note new'; note.textContent=teamName()+' 이전 물자 기록이 없어요 · 여기 채워 저장하면 다음 날로 이어집니다'; }
   }
@@ -820,7 +836,7 @@ function applyMat(v){
 }
 /* 물자 칸에 실제로 뭔가 들어있는지 (일련번호는 설정에서 자동으로 채워지므로 제외) */
 function matHasContent(){
-  if(gv('m_sbux')!=='') return true;
+  for(const b of BENEFITS){ if(gv('mb_'+b.id)!=='') return true; }
   for(const c of COLORS){ if(gv('mq_'+c.id)!=='') return true; }
   return false;
 }
@@ -829,7 +845,8 @@ function saveMatFor(v){
   if(!matHasContent()) return false;
   const k=matKey(v); MAT[k]=MAT[k]||{};
   const qty={}; COLORS.forEach(c=>{ qty[c.id]=n0('mq_'+c.id); });
-  MAT[k][v.dateKey]={ m_box:gv('m_box'), m_serial:gv('m_serial'), sbux:n0('m_sbux'), qty, savedAt:Date.now() };
+  const benefits={}; BENEFITS.forEach(b=>{ benefits[b.id]=n0('mb_'+b.id); });
+  MAT[k][v.dateKey]={ m_box:gv('m_box'), m_serial:gv('m_serial'), benefits, qty, savedAt:Date.now() };
   persistMat();
   return true;
 }
@@ -855,6 +872,16 @@ function buildCloseRows(){
     +'</div>'
   ).join('');
 }
+function buildCloseBenefitRows(){
+  const box=document.getElementById('closeBenefitRows'); if(!box) return;
+  box.innerHTML=BENEFITS.map(b=>
+    '<div class="qty-row"><span class="nm">'+esc(b.name||'')+'</span>'
+    +'<input type="text" inputmode="numeric" id="cbs_'+b.id+'" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()">'
+    +'<span class="slash">/</span>'
+    +'<input type="text" inputmode="numeric" id="cbr_'+b.id+'" placeholder="0" oninput="closeAuto=false; markCloseNote(); render()">'
+    +'</div>'
+  ).join('');
+}
 function markCloseNote(){
   const n=document.getElementById('closeNote'); if(!n) return;
   if(closeAuto){ n.className='mat-note own'; n.textContent='실시간 판매 누적에서 자동 계산됨 · 직접 고치면 수동으로 바뀝니다'; }
@@ -870,9 +897,11 @@ function recalcClose(keepManual){
     const se=document.getElementById('cs_'+c.id); if(se) se.value=s;
     const re=document.getElementById('cr_'+c.id); if(re) re.value=Math.max(0,have-s);
   });
-  const ss=toInt(sold.sbux), sh=n0('m_sbux');
-  const a=document.getElementById('c_sbux_s'); if(a) a.value=ss;
-  const b=document.getElementById('c_sbux_r'); if(b) b.value=Math.max(0,sh-ss);
+  const ssold=sold; BENEFITS.forEach(b=>{
+    const s=toInt(sold.ben[b.id]), have=n0('mb_'+b.id);
+    const se=document.getElementById('cbs_'+b.id); if(se) se.value=s;
+    const re=document.getElementById('cbr_'+b.id); if(re) re.value=Math.max(0,have-s);
+  });
   markCloseNote(); render();
 }
 
@@ -1061,7 +1090,7 @@ function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에
 /* ═══════════ 편집 시트 ═══════════ */
 const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand',
   'mc_from','mc_to','mc_reason','mc_extra','md_store','md_stock','md_nearby','md_feedback','md_extra',
-  'c_date','c_sbux_s','c_sbux_r','fn_borrow'];
+  'c_date','fn_borrow'];
 const FLAG_IDS=['md_agree','md_consent','fn_withdraw'];
 function closeIds(){ const a=[]; COLORS.forEach(c=>{ a.push('cs_'+c.id); a.push('cr_'+c.id); }); return a; }
 
@@ -1234,9 +1263,9 @@ function renderSettings(){
     BENEFITS.forEach((b,i)=>{
       const row=document.createElement('div'); row.className='color-row';
       const inp=document.createElement('input'); inp.type='text'; inp.value=b.name||''; inp.placeholder='혜택 이름 (예: 스타벅스)';
-      inp.oninput=()=>{ BENEFITS[i].name=inp.value.trim(); saveBenefits(); buildBenefitInputs(); render(); };
+      inp.oninput=()=>{ BENEFITS[i].name=inp.value.trim(); saveBenefits(); rebuildBenefitUI(); };
       const del=document.createElement('button'); del.className='mini-del'; del.textContent='✕';
-      del.onclick=()=>{ if(BENEFITS.length<=1){ toast('최소 1개는 있어야 해'); return; } if(!confirm('이 구매혜택을 지울까요?')) return; BENEFITS.splice(i,1); saveBenefits(); renderSettings(); buildBenefitInputs(); render(); };
+      del.onclick=()=>{ if(BENEFITS.length<=1){ toast('최소 1개는 있어야 해'); return; } if(!confirm('이 구매혜택을 지울까요?')) return; BENEFITS.splice(i,1); saveBenefits(); renderSettings(); rebuildBenefitUI(); };
       row.appendChild(inp); row.appendChild(del); bbox.appendChild(row);
     });
   }
@@ -1297,7 +1326,12 @@ function buildBenefitInputs(){
     row.appendChild(nm); row.appendChild(inp); box.appendChild(row);
   });
 }
-function addBenefit(){ BENEFITS.push({id:'bf'+Date.now(), name:''}); saveBenefits(); renderSettings(); buildBenefitInputs(); }
+function addBenefit(){ BENEFITS.push({id:'bf'+Date.now(), name:''}); saveBenefits(); renderSettings(); rebuildBenefitUI(); }
+function rebuildBenefitUI(){
+  buildBenefitInputs(); buildMatBenefitRows(); buildCloseBenefitRows();
+  if(curId&&DATA[curId]){ applyMat(DATA[curId]); recalcClose(true); }
+  render();
+}
 
 /* ─── 이동 완료 보고 점포 재고 (같은 STOCKC 목록 · 별도 카운트 · 최대 2) ─── */
 const MSC={};
@@ -1362,7 +1396,7 @@ function tMaterial(){
   L.push('단말기 일련번호: '+gv('m_serial')); L.push('');
   L.push('타포린백 pop 테이블보 007가방 dp용 디바이스 실버 블랙');
   L.push('재떨이');
-  L.push('스타벅스 카드 '+n0('m_sbux'));
+  BENEFITS.forEach(b=>{ L.push((b.name||'')+' '+n0('mb_'+b.id)); });
   L.push('리플렛'); L.push('');
   L.push('판매용 디스플레이');
   COLORS.forEach(c=>{ L.push('- '+c.mat+' '+n0('mq_'+c.id)); });
@@ -1413,7 +1447,7 @@ function tClose(){
   L.push('판매/잔여수량:');
   COLORS.forEach(c=>{ L.push(c.close+' - '+n0('cs_'+c.id)+'개/'+n0('cr_'+c.id)+'개'); });
   L.push('');
-  L.push('스타벅스 카드 소진/잔여 수량: '+n0('c_sbux_s')+'/'+n0('c_sbux_r'));
+  BENEFITS.forEach(b=>{ L.push((b.name||'')+' 소진/잔여 수량: '+n0('cbs_'+b.id)+'/'+n0('cbr_'+b.id)); });
   return L.join('\n');
 }
 
@@ -1445,7 +1479,7 @@ function switchView(v){
 /* ═══════════ 시작 ═══════════ */
 window.addEventListener('DOMContentLoaded',()=>{
   load(); loadMat(); loadLedger(); loadRank();
-  buildMatRows(); buildCloseRows(); buildLiveColors(); buildStockColors(); buildMdStockColors(); buildBenefitInputs();
+  buildMatRows(); buildMatBenefitRows(); buildCloseRows(); buildCloseBenefitRows(); buildLiveColors(); buildStockColors(); buildMdStockColors(); buildBenefitInputs();
   renderAll(); renderSettings(); renderRankUI(); tagOptVals();
   const n=document.getElementById('rk_name'); if(n&&RANKME) n.value=RANKME.name||'';
   const t=document.getElementById('rk_team'); if(t&&RANKME) t.value=(RANKME.teamId||'')+'팀';
