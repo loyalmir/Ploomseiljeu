@@ -384,6 +384,13 @@
           <span class="opt" onclick="pick('l_kakao','X',this,'no')">X</span>
         </div>
       </div>
+      <div class="field">
+        <label>리필스틱 구매 여부</label>
+        <div class="opts" data-group="l_refill">
+          <span class="opt" onclick="pick('l_refill','O',this,'yes')">O</span>
+          <span class="opt" onclick="pick('l_refill','X',this,'no')">X</span>
+        </div>
+      </div>
       <div id="l_benefits" style="margin-bottom:16px;"></div>
       <div class="grp">
         <div class="grp-t">이 날 판매 누적 <span id="ledgerCount" class="right mono"></span></div>
@@ -1386,6 +1393,7 @@ function tLive(){
   L.push('판매경로 : '+(V.l_route||''));
   L.push('회원가입 여부 : '+(V.l_join||''));
   L.push('카톡 친추 여부 : '+(V.l_kakao||''));
+  L.push('리필스틱 구매 여부 : '+(V.l_refill||''));
   BENEFITS.forEach(b=>{ L.push('구매혜택('+(b.name||'')+') : '+n0('lb_'+b.id)); });
   return L.join('\n');
 }
