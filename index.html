@@ -190,6 +190,11 @@
   .rk-switch.on i{left:21px; background:var(--green);}
   .rk-ok{font-size:10px; font-weight:800; color:var(--green); background:rgba(56,211,159,.14); padding:1px 6px; border-radius:5px; margin-left:4px;}
   .rk-no{font-size:10px; font-weight:800; color:var(--amber); background:rgba(255,194,75,.14); padding:1px 6px; border-radius:5px; margin-left:4px;}
+  .card-actions{position:absolute; top:10px; right:10px; display:flex; gap:6px; align-items:center; z-index:2;}
+  .card-keep{background:var(--surface-2); border:1px solid var(--line); color:var(--txt-dim); font-size:11px; font-weight:800; padding:5px 10px; border-radius:7px; cursor:pointer;}
+  .card-keep:active{background:var(--blue); color:#fff; border-color:var(--blue);}
+  .card-del{background:rgba(255,107,92,.12); border:1px solid rgba(255,107,92,.32); color:var(--coral); width:28px; height:28px; border-radius:7px; font-size:13px; cursor:pointer; line-height:1;}
+  .card-del:active{background:var(--coral); color:#fff;}
   .photo-thumbs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
   .pth{position:relative; width:66px; height:66px; border-radius:9px; overflow:hidden; border:1px solid var(--line);}
   .pth img{width:100%; height:100%; object-fit:cover; display:block;}
@@ -1092,7 +1097,8 @@ function card(v){
   const sold=soldAt(matKey(v), v.dateKey);
   const tot=COLORS.reduce((a,c)=>a+toInt(sold[c.id]),0);
   return '<div class="card'+(v.report?' saved':'')+'" onclick="openSheet(\''+v.id+'\')">'
-    +'<div class="stripe"></div>'+(v.report?'<span class="saved-pill">저장됨</span>':'')
+    +'<div class="stripe"></div>'
+    +'<div class="card-actions"><button class="card-keep" onclick="keepOnly(event,\''+v.id+'\')">이것만</button><button class="card-del" onclick="delCard(event,\''+v.id+'\')">✕</button></div>'
     +'<div class="card-top"><span class="round">'+(v.round?('#'+v.round):'')+'</span><span class="name">'+esc(v.store)+'</span></div>'
     +'<div class="meta">'
     +'<span class="tag type">'+esc(v.type)+'</span>'
@@ -1101,6 +1107,7 @@ function card(v){
     +(v.storeCode?'<span class="tag code">'+esc(v.storeCode)+'</span>':'')
     +(v.group?'<span class="tag" style="background:rgba(255,107,92,.14); color:var(--coral);">'+esc(v.group)+'</span>':'')
     +(tot?'<span class="tag" style="background:rgba(56,211,159,.16); color:var(--green);">판매 '+tot+'</span>':'')
+    +(v.report?'<span class="tag" style="background:rgba(56,211,159,.16); color:var(--green);">저장됨</span>':'')
     +'</div>'
     +(v.addr?'<div class="addr">'+esc(v.addr)+' '+naver+'</div>':'')
     +'</div>';
@@ -1116,6 +1123,18 @@ function renderSchedule(){
     +(v.storeCode?'<span class="tag code">'+esc(v.storeCode)+'</span>':'')+'</div></div>').join('');
 }
 function delVisit(e,id){ e.preventDefault(); if(confirm('이 매장을 일정에서 지울까요?')){ delete DATA[id]; save(); } }
+function delCard(e,id){
+  e.stopPropagation(); const v=DATA[id]; if(!v) return;
+  if(!confirm('「'+(v.store||'')+'」 일정을 삭제할까요?')) return;
+  delete DATA[id]; save(); toast('삭제됨');
+}
+function keepOnly(e,id){
+  e.stopPropagation(); const v=DATA[id]; if(!v) return;
+  const victims=Object.values(DATA).filter(x=>x.id!==id && x.dateKey===v.dateKey && (filterGroup==='전체'||(x.group||'')===filterGroup));
+  if(victims.length===0){ toast('이 날 다른 일정이 없어'); return; }
+  if(!confirm(v.dateKey+' 에서 「'+(v.store||'')+'」 하나만 남기고 '+victims.length+'곳을 삭제할까요?')) return;
+  victims.forEach(x=>delete DATA[x.id]); save(); toast(victims.length+'곳 삭제됨');
+}
 
 /* ═══════════ 편집 시트 ═══════════ */
 const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand',
