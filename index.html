@@ -190,6 +190,10 @@
   .rk-switch.on i{left:21px; background:var(--green);}
   .rk-ok{font-size:10px; font-weight:800; color:var(--green); background:rgba(56,211,159,.14); padding:1px 6px; border-radius:5px; margin-left:4px;}
   .rk-no{font-size:10px; font-weight:800; color:var(--amber); background:rgba(255,194,75,.14); padding:1px 6px; border-radius:5px; margin-left:4px;}
+  .photo-thumbs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .pth{position:relative; width:66px; height:66px; border-radius:9px; overflow:hidden; border:1px solid var(--line);}
+  .pth img{width:100%; height:100%; object-fit:cover; display:block;}
+  .pth button{position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,.62); color:#fff; border:none; font-size:11px; line-height:1; cursor:pointer;}
   .view{display:none;} .view.on{display:block;}
   .none{display:none;}
 </style>
@@ -314,7 +318,19 @@
 
     <!-- 01·02 오전/오후 -->
     <div class="form none" id="f-sales">
-      <div class="field"><label>대상 점포</label><input type="text" id="s_store" placeholder="점포명" oninput="syncFromStore(); render()"></div>
+      <div class="grp" style="border-top:none; padding-top:0; margin-top:0;">
+        <div class="grp-t">일정 정보 (수정 가능)</div>
+        <div class="field" style="margin-bottom:10px;"><label>팀</label><input type="text" id="e_team" placeholder="예) 3팀" oninput="editVisit()"></div>
+        <div class="field" style="margin-bottom:10px;"><label>매장 이름</label><input type="text" id="e_store" placeholder="매장명" oninput="editVisit()"></div>
+        <div class="field" style="margin-bottom:0;">
+          <label>구분</label>
+          <div class="opts" id="e_typeBox">
+            <span class="opt" onclick="pickType('점포')">점포</span>
+            <span class="opt" onclick="pickType('흡연구역')">흡연구역</span>
+          </div>
+        </div>
+      </div>
+      <div class="field"><label>대상 점포 <span class="o">(브랜드+매장 자동 · 수정 가능)</span></label><input type="text" id="s_store" placeholder="점포명" oninput="s_storeManual=true; syncFromStore(); render()"></div>
       <div class="field">
         <label>진행 안내</label>
         <div class="opts" data-group="s_guide">
@@ -353,6 +369,13 @@
           <span class="opt" onclick="pick('s_consent','작성 예정',this)">작성 예정</span>
           <span class="opt" onclick="pick('s_consent','해당없음',this,'no')">해당없음</span>
         </div>
+      </div>
+      <div class="field">
+        <label>사진 첨부 <span class="o">(공유 누를 때 함께 전송)</span></label>
+        <div id="photoThumbs" class="photo-thumbs"></div>
+        <label class="btn btn-ghost btn-block" style="cursor:pointer;">+ 사진 추가
+          <input type="file" accept="image/*" multiple hidden onchange="addPhotos(event)">
+        </label>
       </div>
     </div>
 
@@ -1101,6 +1124,45 @@ const FIELD_IDS=['s_store','s_stock','s_booth','s_feedback','s_nearby','s_brand'
 const FLAG_IDS=['md_agree','md_consent','fn_withdraw'];
 function closeIds(){ const a=[]; COLORS.forEach(c=>{ a.push('cs_'+c.id); a.push('cr_'+c.id); }); return a; }
 
+let s_storeManual=false;
+let PHOTOS=[];
+function refreshHeader(v){
+  document.getElementById('edStore').textContent=v.store||v.team||'보고';
+  document.getElementById('edMeta').innerHTML=esc(v.team)+' · '+esc(v.brand)+' · '+esc(v.type)+' · '+(v.dateKey||'')+' '+esc(v.dow||'')
+    +(v.storeCode?'<span class="code">'+esc(v.storeCode)+'</span>':'');
+}
+/* 팀·매장 수정 → 방문 정보에 반영 */
+function editVisit(){
+  if(!curId||!DATA[curId]) return;
+  const v=DATA[curId];
+  const t=gv('e_team'); if(t) v.team=t;
+  v.store=gv('e_store');
+  if(!s_storeManual){ const ss=document.getElementById('s_store'); if(ss) ss.value=fullStore(v); syncFromStore(); }
+  refreshHeader(v); save(); render();
+}
+/* 구분(점포/흡연구역) 수정 */
+function pickType(val){
+  if(!curId||!DATA[curId]) return;
+  DATA[curId].type=val;
+  document.querySelectorAll('#e_typeBox .opt').forEach(o=>o.classList.toggle('on', o.textContent===val));
+  refreshHeader(DATA[curId]); save(); render();
+}
+/* 사진 첨부 (공유 시 함께 전송 · 메모리에만 보관) */
+function addPhotos(ev){
+  Array.from(ev.target.files||[]).forEach(f=>{ if(f.type.startsWith('image/')) PHOTOS.push(f); });
+  ev.target.value=''; renderPhotos();
+}
+function renderPhotos(){
+  const box=document.getElementById('photoThumbs'); if(!box) return;
+  box.innerHTML='';
+  PHOTOS.forEach((f,i)=>{
+    const d=document.createElement('div'); d.className='pth';
+    const img=document.createElement('img'); img.src=URL.createObjectURL(f); d.appendChild(img);
+    const b=document.createElement('button'); b.textContent='✕'; b.onclick=()=>{ PHOTOS.splice(i,1); renderPhotos(); }; d.appendChild(b);
+    box.appendChild(d);
+  });
+}
+
 function syncFromStore(){
   if(mcFromTouched) return;
   const src=document.getElementById('s_store'), dst=document.getElementById('mc_from');
@@ -1113,7 +1175,8 @@ function resetSheet(){
   Object.keys(CC).forEach(k=>delete CC[k]);
   Object.keys(SC).forEach(k=>delete SC[k]);
   Object.keys(MSC).forEach(k=>delete MSC[k]);
-  moveMode='confirm'; mcFromTouched=false; s_stockTouched=false; md_stockTouched=false; closeAuto=true;
+  moveMode='confirm'; mcFromTouched=false; s_stockTouched=false; md_stockTouched=false; s_storeManual=false; closeAuto=true;
+  PHOTOS=[]; renderPhotos();
   document.querySelectorAll('#sheet .opt').forEach(o=>o.classList.remove('on','yes','no'));
 }
 function applyPickUI(){
@@ -1134,10 +1197,12 @@ function tagOptVals(){
 }
 function openSheet(id){
   curId=id; const v=DATA[id]; if(!v) return;
-  document.getElementById('edStore').textContent=v.store||v.team||'보고';
-  document.getElementById('edMeta').innerHTML=esc(v.team)+' · '+esc(v.brand)+' · '+esc(v.type)+' · '+(v.dateKey||'')+' '+esc(v.dow||'')
-    +(v.storeCode?'<span class="code">'+esc(v.storeCode)+'</span>':'');
+  refreshHeader(v);
   resetSheet();
+  // 팀·매장·구분 수정칸 채우기
+  const et=document.getElementById('e_team'); if(et) et.value=v.team||'';
+  const es=document.getElementById('e_store'); if(es) es.value=v.store||'';
+  document.querySelectorAll('#e_typeBox .opt').forEach(o=>o.classList.toggle('on', o.textContent===v.type));
   const rep=v.report;
   if(rep&&rep.inputs){
     Object.entries(rep.inputs).forEach(([k,val])=>{ const e=document.getElementById(k); if(e) e.value=val; });
@@ -1472,7 +1537,17 @@ async function copyOut(){
 }
 async function shareOut(){
   const t=buildText();
-  try{ if(navigator.share){ await navigator.share({text:t}); } else { await navigator.clipboard.writeText(t); toast('공유 미지원 · 복사됨'); } }
+  const wantFiles=(type==='am'||type==='pm')&&PHOTOS.length>0;
+  try{
+    if(wantFiles && navigator.canShare && navigator.canShare({files:PHOTOS})){
+      await navigator.share({text:t, files:PHOTOS});
+    } else if(navigator.share){
+      await navigator.share({text:t});
+      if(wantFiles) toast('이 기기 공유는 사진 미지원 · 텍스트만 전송됨');
+    } else {
+      await navigator.clipboard.writeText(t); toast('공유 미지원 · 복사됨');
+    }
+  }
   catch(e){ if(e&&e.name==='AbortError') return; }
 }
 let toastT;
