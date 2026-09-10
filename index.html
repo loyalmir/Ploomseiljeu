@@ -326,6 +326,7 @@
       <div class="grp" style="border-top:none; padding-top:0; margin-top:0;">
         <div class="grp-t">일정 정보 (수정 가능)</div>
         <div class="field" style="margin-bottom:10px;"><label>팀</label><input type="text" id="e_team" placeholder="예) 3팀" oninput="editVisit()"></div>
+        <div class="field" style="margin-bottom:10px;"><label>편의점 <span class="o">(GS25 · CU · 세븐일레븐 …)</span></label><input type="text" id="e_brand" placeholder="예) GS25" oninput="editVisit()"></div>
         <div class="field" style="margin-bottom:10px;"><label>매장 이름</label><input type="text" id="e_store" placeholder="매장명" oninput="editVisit()"></div>
         <div class="field" style="margin-bottom:0;">
           <label>구분</label>
@@ -1155,6 +1156,7 @@ function editVisit(){
   if(!curId||!DATA[curId]) return;
   const v=DATA[curId];
   const t=gv('e_team'); if(t) v.team=t;
+  v.brand=normBrand(gv('e_brand'));
   v.store=gv('e_store');
   if(!s_storeManual){ const ss=document.getElementById('s_store'); if(ss) ss.value=fullStore(v); syncFromStore(); }
   refreshHeader(v); save(); render();
@@ -1220,6 +1222,7 @@ function openSheet(id){
   resetSheet();
   // 팀·매장·구분 수정칸 채우기
   const et=document.getElementById('e_team'); if(et) et.value=v.team||'';
+  const eb=document.getElementById('e_brand'); if(eb) eb.value=v.brand||'';
   const es=document.getElementById('e_store'); if(es) es.value=v.store||'';
   document.querySelectorAll('#e_typeBox .opt').forEach(o=>o.classList.toggle('on', o.textContent===v.type));
   const rep=v.report;
