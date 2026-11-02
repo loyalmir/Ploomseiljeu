@@ -569,13 +569,36 @@ function saveSerial(v){ localStorage.setItem('ploomSalesSerial', v.trim()); }
 /* ═══════════ 랭킹 앱 연동 (loyalmir.github.io/PloomRanking) ═══════════
    랭킹 앱과 똑같은 REST 방식으로 같은 DB에 판매를 올림 (카운트만).
    sales/{YYYY-MM-DD}/{memberId} 에 push → {teamId, name, color, qty, storeId, ts} */
+/* ===== 익명 로그인 (REST) — DB 보안 규칙(auth != null) 통과용 ===== */
+const FB_ANON_KEY = "AIzaSyBU__sc4ejEOlLLCGzXKynxq_wSqq5F5qk";
+const FB_ANON_STORE = "fbAnon_ploomranking";
+let fbTokP = null;
+function fbTokSave(t){ try{ localStorage.setItem(FB_ANON_STORE, JSON.stringify(t)); }catch(e){} }
+async function fbTokFetch(){
+  let t=null; try{ t=JSON.parse(localStorage.getItem(FB_ANON_STORE)||"null"); }catch(e){}
+  if(t && t.id && t.exp > Date.now()+60000) return t.id;
+  try{
+    if(t && t.rt){
+      const r = await fetch("https://securetoken.googleapis.com/v1/token?key="+FB_ANON_KEY, {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:"grant_type=refresh_token&refresh_token="+encodeURIComponent(t.rt)});
+      if(r.ok){ const j=await r.json(); t={id:j.id_token, rt:j.refresh_token, exp:Date.now()+(+j.expires_in)*1000}; fbTokSave(t); return t.id; }
+    }
+    const r = await fetch("https://identitytoolkit.googleapis.com/v1/accounts:signUp?key="+FB_ANON_KEY, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({returnSecureToken:true})});
+    if(!r.ok) return null;
+    const j = await r.json(); t={id:j.idToken, rt:j.refreshToken, exp:Date.now()+(+j.expiresIn)*1000}; fbTokSave(t); return t.id;
+  }catch(e){ console.warn("익명 로그인 실패", e); return null; }
+}
+async function fbAuthUrl(url){
+  if(!fbTokP) fbTokP = fbTokFetch().finally(()=>{ setTimeout(()=>{ fbTokP=null; }, 30000); });
+  const id = await fbTokP;
+  return id ? url + (url.includes("?")?"&":"?") + "auth=" + encodeURIComponent(id) : url;
+}
 const RANK_DB='https://ploomranking-default-rtdb.firebaseio.com';
 const RANK_ROOT='ploomRanking';
 function rankPath(p){ return RANK_DB+'/'+RANK_ROOT+'/'+p+'.json'; }
-async function rankGet(p){ const r=await fetch(rankPath(p),{cache:'no-store'}); if(!r.ok) throw new Error('서버 응답 오류 ('+r.status+')'); return await r.json(); }
-async function rankPush(p,val){ const r=await fetch(rankPath(p),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}); if(!r.ok) throw new Error('저장 오류 ('+r.status+')'); return (await r.json()).name; }
-async function rankSet(p,val){ const r=await fetch(rankPath(p),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}); if(!r.ok) throw new Error('저장 오류 ('+r.status+')'); return await r.json(); }
-async function rankRemove(p){ const r=await fetch(rankPath(p),{method:'DELETE'}); return r.ok; }
+async function rankGet(p){ const r=await fetch(await fbAuthUrl(rankPath(p)),{cache:'no-store'}); if(!r.ok) throw new Error('서버 응답 오류 ('+r.status+')'); return await r.json(); }
+async function rankPush(p,val){ const r=await fetch(await fbAuthUrl(rankPath(p)),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}); if(!r.ok) throw new Error('저장 오류 ('+r.status+')'); return (await r.json()).name; }
+async function rankSet(p,val){ const r=await fetch(await fbAuthUrl(rankPath(p)),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(val)}); if(!r.ok) throw new Error('저장 오류 ('+r.status+')'); return await r.json(); }
+async function rankRemove(p){ const r=await fetch(await fbAuthUrl(rankPath(p)),{method:'DELETE'}); return r.ok; }
 
 let RANKME=null, rankOn=false;
 function loadRank(){
